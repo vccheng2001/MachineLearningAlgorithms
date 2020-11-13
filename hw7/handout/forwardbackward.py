@@ -31,24 +31,31 @@ def main():
 
 def build_alpha(states, states_dict, len_states, words, words_dict, len_words, prior, B,A, validation_input, predicted_file):
     # init 
-    alphaMatrix = np.zeros((1, len_states))
-    print(alphaMatrix)
+    alphaMatrix = np.zeros((1,len_states))
     # start with timestep 1
-    build_alpha_helper(0, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A)
-
+    alpha_matrix = build_alpha_helper(0, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A)
+    print(alpha_matrix)
+    
 # Build alpha
 def build_alpha_helper(t, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A):
+    alphaVec = np.zeros(len_states)
+    if (t == len_states): return alphaMatrix
     if (t == 0):
         # p(starting state is j) * p(see observation 1 at state j)
-        alphaMatrix[t] = np.multiply(B[:,t], prior)
-        return alphaMatrix 
-    else:
-        for j in range(len_states): 
-            aAsum = 0
-            for k in range(len_states):
-                aAsum += np.dot(alphaMatrix[t-1][k], A[k][j])
-            alphaMatrix[t][j] = np.multiply(aAsum, B[j][t])
-        # alphaMatrix[t][j] = np.multiply(B[j][t], np.dot(A[t-1][j], alphaMatrix[t-1]))
+        alphaVec= np.multiply(B[:,t], prior)
+        # Update all states for timestep 1 
+        alphaMatrix[0] = alphaVec
+        return build_alpha_helper(t+1, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A) 
+    # Recurse 
+    for j in range(len_states): 
+        aAsum = 0
+        for k in range(len_states):
+            aAsum += np.dot(alphaMatrix[t-1][k], A[k][j])
+        alphaVec[j] = np.multiply(aAsum, B[j][t])
+    alphaMatrix = np.vstack((alphaMatrix, alphaVec))
+    return build_alpha_helper(t+1, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A) 
+
+        # # alphaMatrix[t][j] = np.multiply(B[j][t], np.dot(A[t-1][j], alphaMatrix[t-1]))
         # alphaMatrix[t] = np.multiply(B[:,t], np.dot(A[t][j], alphaMatrix[t-1]))
 
     # else:

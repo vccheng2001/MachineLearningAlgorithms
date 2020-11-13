@@ -29,19 +29,31 @@ def main():
     # build_Beta(states, states_dict, len_states, words, words_dict, len_words, hmmprior, hmmemit, hmmtrans, validation_input, predicted_file)
 
 
-def build_alpha():
-    alphaMatrix = np.zeros((T, states))
-    alpha = build_alpha_helper(1, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A)
+def build_alpha(states, states_dict, len_states, words, words_dict, len_words, prior, B,A, validation_input, predicted_file):
+    # init 
+    alphaMatrix = np.zeros((1, len_states))
+    print(alphaMatrix)
+    # start with timestep 1
+    build_alpha_helper(0, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A)
 
 # Build alpha
 def build_alpha_helper(t, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A):
-    alpha = np.zeros((T, states))
-    if (t == 1):
-        # observation 1 at 
-        alpha[1][j] = np.multiply(prior[j], B[j][1])
+    if (t == 0):
+        # p(starting state is j) * p(see observation 1 at state j)
+        alphaMatrix[t] = np.multiply(B[:,t], prior)
+        return alphaMatrix 
     else:
-        alpha[t][j] = B[j][xt] * np.multiply(A[k][j], alpha[t-1])
-        return build_alpha_helper(t+1, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A)
+        for j in range(len_states): 
+            aAsum = 0
+            for k in range(len_states):
+                aAsum += np.dot(alphaMatrix[t-1][k], A[k][j])
+            alphaMatrix[t][j] = np.multiply(aAsum, B[j][t])
+        # alphaMatrix[t][j] = np.multiply(B[j][t], np.dot(A[t-1][j], alphaMatrix[t-1]))
+        # alphaMatrix[t] = np.multiply(B[:,t], np.dot(A[t][j], alphaMatrix[t-1]))
+
+    # else:
+    #     alpha[t][j] = B[j][xt] * np.multiply(A[k][j], alpha[t-1])
+    #     return build_alpha_helper(t+1, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A)
     
 
 

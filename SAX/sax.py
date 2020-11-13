@@ -5,9 +5,10 @@ from scipy.stats import norm
 from pyts.approximation import SymbolicAggregateApproximation
 import pandas as pd 
 
-hr_file = "MIMIC_7633/7633_heartrate.csv"
-rr_file = "MIMIC_7633/7633_resprate.csv"  
-sbp_file = "MIMIC_7633/7633_systolicbp.csv"  
+path = "MIMIC_7633/" 
+hr_file = "Heart_Rate.csv"
+rr_file = "Respiration_Rate.csv"  
+sbp_file = "Systolic_BP.csv"  
 
 # Read input file 
 def read_file(file_name):
@@ -23,7 +24,8 @@ def NormalizeData(data):
 # Labels time series data with <n_bins> characters 
 def main():
     # File Name
-    file_name = hr_file
+    file = hr_file 
+    file_name = path + file
     X, lengthX = read_file(file_name)
     n_samples, n_timestamps = 1, lengthX
     X = X.reshape((n_samples,n_timestamps))
@@ -41,7 +43,7 @@ def main():
     bottom_bool = np.r_[True, X_sax[0, 1:] > X_sax[0, :-1]]
     
     #Plot 
-    chars = plot_SAX(file_name, X, X_sax, bottom_bool,n_timestamps, n_bins, bins)
+    chars = plot_SAX(file, X, X_sax, bottom_bool,n_timestamps, n_bins, bins)
   
     # Find most frequent sequences of length 4
     find_freq(chars, 4)
@@ -65,7 +67,7 @@ def find_freq(chars, n):
         print(k, v)
 
 # PLot SAX
-def plot_SAX(file_name, X, X_sax, bottom_bool,n_timestamps, n_bins, bins):
+def plot_SAX(file, X, X_sax, bottom_bool,n_timestamps, n_bins, bins):
     # Stores all characters in time series order 
     chars = []
     plt.figure(figsize=(18, 7))
@@ -81,7 +83,7 @@ def plot_SAX(file_name, X, X_sax, bottom_bool,n_timestamps, n_bins, bins):
     ax = plt.gca().add_artist(first_legend)
     plt.legend(loc=(0.81, 0.93), fontsize=8)
     plt.xlabel('Time', fontsize=14)
-    plt.title('Symbolic Aggregate approx. for ' + file_name, fontsize=16)
+    plt.title('Patient 7633: Symbolic Aggregate Approximation for ' + file, fontsize=16)
     plt.ylim((0,1))
     plt.show()
     return chars 

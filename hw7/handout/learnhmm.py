@@ -60,7 +60,7 @@ def build_hmmemit(states, states_dict, len_states, words, words_dict, len_words,
     # add pseudocount 
     emit_with_pseudo = (emit + 1)
     # sum over states
-    sum_over_states = emit_with_pseudo.sum(axis=0)
+    sum_over_states = emit_with_pseudo.sum(axis=1, keepdims=True)
     # prob: N(y1=sj)+1/sum(N(y1=sp) + 1))
     emit = np.divide(emit_with_pseudo, sum_over_states)
     # Write to output emit file 

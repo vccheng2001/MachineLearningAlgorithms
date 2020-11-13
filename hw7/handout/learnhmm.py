@@ -18,9 +18,9 @@ def main():
         words_dict[word] = i
     
     # Build prior vector pi
-    # build_hmmprior(states, states_dict, len_states,  train_input,  hmmprior)
+    build_hmmprior(states, states_dict, len_states,  train_input,  hmmprior)
     # Build transition matrix A 
-    # build_hmmtrans(states, len_states, words, len_words, train_input, hmmtrans)
+    build_hmmtrans(states, states_dict, len_states, train_input, hmmtrans)
     # Build emission matrix B
     build_hmmemit(states, states_dict, len_states, words, words_dict, len_words, train_input, hmmemit)
 
@@ -44,6 +44,31 @@ def build_hmmprior(states, states_dict, len_states, input_file,output_file):
     # Write to hmmprior output file 
     np.savetxt(output_file, prior, delimiter=" ")
     f.close()
+
+# Build A (Transition) matrix (len_states x len_words)
+def build_hmmtrans(states, states_dict, len_states, input_file, output_file):
+    trans = np.zeros((len_states, len_states))
+    f = open(input_file, "r")
+    # Number of times sj is associated with the word k
+    for row in f: 
+        sequence = row.split()
+        # Get each curr_state, next_state pair in sequence 
+        for i in range(len(sequence) - 1):
+            curr_state = sequence[i].split('_')[1]
+            next_state = sequence[i+1].split('_')[1]
+            # Map to state indices 
+            j = states_dict[curr_state]  # curr state 
+            k = states_dict[next_state] # next state
+            trans[j][k] += 1 # state k after state j 
+    # add pseudocount 
+    trans_with_pseudo = (trans + 1)
+    # sum over states
+    sum_over_states = trans_with_pseudo.sum(axis=0, keepdims=True)
+    trans = np.divide(trans_with_pseudo, sum_over_states)
+    # Write to output trans file 
+    np.savetxt(output_file, trans, delimiter=" ")
+    f.close()   
+
 
 # Build B (Emission) matrix (len_states x len_words)
 def build_hmmemit(states, states_dict, len_states, words, words_dict, len_words, input_file, output_file):

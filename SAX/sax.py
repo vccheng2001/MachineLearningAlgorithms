@@ -5,29 +5,27 @@ from scipy.stats import norm
 from pyts.approximation import SymbolicAggregateApproximation
 import pandas as pd 
 
+# Read input file 
 def read_file():
     # Read from csv
     file_name = "MIMIC_7633/7633_heartrate.csv"
     df = pd.read_csv(file_name,delimiter=',')
     print(df['heartrate'])
-    
     X = df.values  # numpy array
-    print(X)
     return X, len(X)
 
-
+# Normalize 
 def NormalizeData(data):
     return (data - np.min(data)) / (np.max(data) - np.min(data))
  
+# Labels time series data with <n_bins> characters 
 def main():
-    # """Given a list, returns a dictionary mapping each n-element sequence tuple to its number of occurrences in the list."""
-
+ 
     # Initialize all counts implicitly to 0
     X, lengthX = read_file()
     n_samples, n_timestamps = 1, lengthX
     X = X.reshape((n_samples,n_timestamps))
     X = NormalizeData(X)
-    print(X)
     
     # SAX transformation
     n_bins = 12
@@ -64,7 +62,9 @@ def find_freq(chars, n):
     for k, v in sorted(countDict.items(), key=lambda item: item[1]):
         print(k, v)
 
+# PLot SAX
 def plot_SAX(X, X_sax, bottom_bool,n_timestamps, n_bins, bins):
+    # Stores all characters in time series order 
     chars = []
     plt.figure(figsize=(18, 7))
     plt.plot(X[0], 'o--', label='Original')

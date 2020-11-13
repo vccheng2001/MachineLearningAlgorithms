@@ -9,8 +9,8 @@ def main():
 
     # Get prior pi, trans A, emit B 
     prior = np.loadtxt(hmmprior, dtype='float64') 
-    trans = np.loadtxt(hmmtrans, dtype='float64')  
-    emit = np.loadtxt(hmmemit, dtype='float64')  
+    A = np.loadtxt(hmmtrans, dtype='float64')  
+    B = np.loadtxt(hmmemit, dtype='float64')  
 
     len_states, len_words = np.size(states), np.size(words)
     states_dict, words_dict= {}, {}
@@ -24,20 +24,19 @@ def main():
         words_dict[word] = i
 
     # Build alpha 
-    build_alpha(states, states_dict, len_states, words, words_dict, len_words, prior, emit,trans, validation_input, predicted_file)
+    build_alpha(states, len_states, prior, B, A)
     # Build Beta 
-    # build_Beta(states, states_dict, len_states, words, words_dict, len_words, hmmprior, hmmemit, hmmtrans, validation_input, predicted_file)
+    #build_Beta(states, len_states, prior, B, A)
 
-
-def build_alpha(states, states_dict, len_states, words, words_dict, len_words, prior, B,A, validation_input, predicted_file):
+def build_alpha(states, len_states, prior, B,A):
     # init 
     alphaMatrix = np.zeros((1,len_states))
     # start with timestep 1
-    alpha_matrix = build_alpha_helper(0, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A)
+    alpha_matrix = build_alpha_helper(0, alphaMatrix, states, len_states,  prior, B,A)
     print(alpha_matrix)
-    
+
 # Build alpha
-def build_alpha_helper(t, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A):
+def build_alpha_helper(t, alphaMatrix, states, len_states,  prior, B,A):
     alphaVec = np.zeros(len_states)
     if (t == len_states): return alphaMatrix
     if (t == 0):
@@ -45,7 +44,7 @@ def build_alpha_helper(t, alphaMatrix, states, states_dict, len_states, words, w
         alphaVec= np.multiply(B[:,t], prior)
         # Update all states for timestep 1 
         alphaMatrix[0] = alphaVec
-        return build_alpha_helper(t+1, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A) 
+        return build_alpha_helper(t+1, alphaMatrix, states, len_states,  prior, B,A) 
     # Recurse 
     for j in range(len_states): 
         aAsum = 0
@@ -53,36 +52,8 @@ def build_alpha_helper(t, alphaMatrix, states, states_dict, len_states, words, w
             aAsum += np.dot(alphaMatrix[t-1][k], A[k][j])
         alphaVec[j] = np.multiply(aAsum, B[j][t])
     alphaMatrix = np.vstack((alphaMatrix, alphaVec))
-    return build_alpha_helper(t+1, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A) 
+    return build_alpha_helper(t+1, alphaMatrix, states,len_states, prior, B,A) 
 
-        # # alphaMatrix[t][j] = np.multiply(B[j][t], np.dot(A[t-1][j], alphaMatrix[t-1]))
-        # alphaMatrix[t] = np.multiply(B[:,t], np.dot(A[t][j], alphaMatrix[t-1]))
-
-    # else:
-    #     alpha[t][j] = B[j][xt] * np.multiply(A[k][j], alpha[t-1])
-    #     return build_alpha_helper(t+1, alphaMatrix, states, states_dict, len_states, words, words_dict, len_words, prior, B,A)
-    
-
-
-    # emit = np.zeros((len_states, len_words))
-    # f = open(input_file, "r")
-    # # Number of times sj is associated with the word k
-    # for row in f: 
-    #     sequence = row.split()
-    #     for seq in sequence:
-    #         (word, state) = seq.split('_')
-    #         j = states_dict[state]
-    #         k = words_dict[word]
-    #         emit[j][k] += 1 # see word k at state j 
-    # # add pseudocount 
-    # emit_with_pseudo = (emit + 1)
-    # # sum over states
-    # sum_over_states = emit_with_pseudo.sum(axis=1, keepdims=True)
-    # # prob: N(y1=sj)+1/sum(N(y1=sp) + 1))
-    # emit = np.divide(emit_with_pseudo, sum_over_states)
-    # # Write to output emit file 
-    # np.savetxt(output_file, emit, delimiter=" ")
-    # f.close()            
 
         
    

@@ -29,13 +29,17 @@ def main():
     f = open(input_file, "r")
     out = open(predicted_file, 'w')
     metrics_out = open(metrics_file, 'w')
+    correct = 0 
+    sumTs = 0
+    sumLogLikelihood = 0
+    count_rows = 0
     for row in f:
+        count_rows += 1
         sequence = row.split()
         maxT = len(sequence) 
-     
+        sumTs += maxT 
         alphaMatrix = build_alpha(sequence, word_dict, maxT, states, len_states, prior, B, A)
         BetaMatrix = build_Beta(sequence,word_dict,maxT, states, len_states, prior, B, A)
-        correct = 0
         for t in range(maxT):
             alphaBeta = np.multiply(alphaMatrix[t], BetaMatrix[t])
             max_index = np.argmax(alphaBeta)
@@ -48,9 +52,10 @@ def main():
                 out.write(" ")
         out.write('\n')
 
-        log_likelihood = np.log(np.sum(alphaMatrix[maxT-1]))
-        metrics_out.write("Average Log-Likelihood: %s\n" % str(log_likelihood))
-        metrics_out.write("Accuracy: %s\n" % str(correct/maxT) ) 
+        sumLogLikelihood += np.log(np.sum(alphaMatrix[maxT-1]))
+    averageLogLikelihood = sumLogLikelihood / count_rows
+    metrics_out.write("Average Log-Likelihood: %s\n" % str(averageLogLikelihood))
+    metrics_out.write("Accuracy: %s\n" % str(correct/sumTs) ) 
 
     # Log likelihood of sequence 
 

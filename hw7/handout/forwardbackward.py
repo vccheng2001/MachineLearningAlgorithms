@@ -34,13 +34,15 @@ def main():
      
         alphaMatrix = build_alpha(sequence, word_dict, maxT, states, len_states, prior, B, A)
         BetaMatrix = build_Beta(sequence,word_dict,maxT, states, len_states, prior, B, A)
-        # print(alphaMatrix)
-        # print(BetaMatrix)
+        print(alphaMatrix)
+        print(BetaMatrix)
         # exit(0)
         for t in range(maxT):
             alphaBeta = np.multiply(alphaMatrix[t], BetaMatrix[t])
             max_index = np.argmax(alphaBeta)
-            out.write((sequence[t].split('_')[0] + "_" + states[max_index].strip() + " "))
+            out.write((sequence[t].split('_')[0] + "_" + states[max_index].strip()))
+            if t != maxT - 1:
+                out.write(' ')
         out.write(' \n')
 
 
@@ -50,6 +52,8 @@ def build_alpha(sequence, word_dict, maxT,states, len_states, prior, B,A):
     # starting t
     t = 0
     alphaMatrix = build_alpha_helper(sequence, word_dict, t, maxT, alphaMatrix, states, len_states,  prior, B,A)
+    print('alpha matrixxxxx')
+    print(alphaMatrix)
     return alphaMatrix
 
 # Build alpha helper function
@@ -71,9 +75,22 @@ def build_alpha_helper(sequence,word_dict, t, maxT, alphaMatrix, states, len_sta
         alphaVec= np.multiply(B[:,index], prior)
         # Update all states for timestep 1 
         alphaMatrix[0] = alphaVec
+        print("TIME 0")
+        print(alphaMatrix)
         return build_alpha_helper(sequence,word_dict, t+1, maxT, alphaMatrix, states, len_states,  prior, B,A) 
     
-    alphaVec = np.multiply(B[:,index], np.dot(A, alphaMatrix[t-1]))
+    print('......', A.T)
+    print(alphaMatrix[t-1])
+    print(" \n ")
+    alphaVec = np.multiply(B[:,index], np.dot(A.T, alphaMatrix[t-1]))
+    print("***B[:index]")
+    print(B[:,index])
+    print('***A.T')
+    print(A.T)
+    print('***a[t-1]')
+    print(alphaMatrix[t-1])
+    print('**vec')
+    print(alphaVec)
     alphaMatrix = np.vstack((alphaMatrix, alphaVec))
     return build_alpha_helper(sequence,word_dict, t+1, maxT,alphaMatrix, states,len_states, prior, B,A) 
 

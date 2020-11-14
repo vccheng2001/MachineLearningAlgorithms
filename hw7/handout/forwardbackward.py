@@ -37,10 +37,12 @@ def main():
             # Build alpha 
             alphaMatrix = build_alpha(t_state, states, len_states, prior, B, A)
             BetaMatrix = build_Beta(t_state, maxT, states, len_states, prior, B, A)
-            alphaBeta = np.multiply(alphaMatrix[t_state - 1], BetaMatrix[t_state - 1])
+            print(alphaMatrix)
+            print(BetaMatrix)
+            alphaBeta = np.multiply(alphaMatrix[t_state], BetaMatrix[t_state])
             max_index = np.argmax(alphaBeta)
             #print(sequence[t_state].split('_')[0] + "_" + states[max_index], end=" ")
-        exit(0)
+            exit(0)
         # print('\n')
 
 
@@ -48,10 +50,10 @@ def main():
 def build_alpha(t_state, states, len_states, prior, B,A):
     # print('------------------alpha--------------------')
     # print('t_state', t_state, '\n')
-    print('prior', prior,'\n')
-    print(prior.shape)
-    print('B', B, '\n')
-    print('A', A,'\n')
+    # print('prior', prior,'\n')
+    # print(prior.shape)
+    # print('B', B, '\n')
+    # print('A', A,'\n')
     # init 
     alphaMatrix = np.zeros((1,len_states))
     # starting t
@@ -99,29 +101,40 @@ def build_alpha_helper(t, t_state, alphaMatrix, states, len_states,  prior, B,A)
 
 def build_Beta(t_state, maxT, states, len_states, prior, B,A):
     # init 
-    BetaMatrix = np.zeros((maxT,len_states))
+    BetaMatrix = np.zeros((1,len_states))
     # start with timestep T
     t = maxT - 1
+    # print("TSTATE")
+    # print(t_state)
     BetaMatrix = build_Beta_helper(t, t_state, maxT, BetaMatrix, states, len_states,  prior, B,A)
     return BetaMatrix
 
 # Build Beta
 def build_Beta_helper(t, t_state, maxT, BetaMatrix, states, len_states,  prior, B,A):
+    # print('curr t', t)
     BetaVec = np.zeros(len_states)
     # Exit
     if (t < t_state): return BetaMatrix
     # Base case, start from end (t=len_states)
     if (t == maxT - 1):
         BetaVec = np.ones(len_states)
-        BetaMatrix[t] = BetaVec 
+        BetaMatrix[0] = BetaVec 
         return build_Beta_helper(t-1, t_state, maxT, BetaMatrix, states, len_states,  prior, B,A) 
     # Recurse 
-    for j in range(len_states):
-        bBsum = 0
-        for k in range(len_states):
-            bBsum += np.multiply(BetaMatrix[t+1][k], B[k][t+1])
-        BetaVec[j] = np.dot(bBsum, A[j][k])
-    BetaMatrix[t] = BetaVec
+    print(t)
+    # print(BetaMatrix)
+    # print(A)
+    # print(B[:,t+1])
+    # print(BetaMatrix[t+1])
+    # print(np.multiply(B[:,t+1], BetaMatrix[t+1]))
+    # print(A)
+    BetaVec = np.dot(A, (np.multiply(B[:,t+1], BetaMatrix[0])))
+    BetaMatrix = np.vstack((BetaVec, BetaMatrix)) 
+    # BetaVec = np.dot(A, (np.multiply(B[:,t+1], BetaMatrix[t+1])))
+    # print(BetaVec)
+    # BetaMatrix = np.vstack((BetaVec, BetaMatrix))
+    print(BetaVec)
+    print(BetaMatrix)
     # BetaMatrix = np.vstack((np.zeros(len_states), BetaMatrix))
     return build_Beta_helper(t-1, t_state, maxT, BetaMatrix, states,len_states, prior, B,A) 
 

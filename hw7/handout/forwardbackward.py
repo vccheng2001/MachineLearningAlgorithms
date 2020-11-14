@@ -34,16 +34,14 @@ def main():
      
         alphaMatrix = build_alpha(sequence, word_dict, maxT, states, len_states, prior, B, A)
         BetaMatrix = build_Beta(sequence,word_dict,maxT, states, len_states, prior, B, A)
-        print(alphaMatrix)
-        print(BetaMatrix)
         # exit(0)
         for t in range(maxT):
             alphaBeta = np.multiply(alphaMatrix[t], BetaMatrix[t])
             max_index = np.argmax(alphaBeta)
             out.write((sequence[t].split('_')[0] + "_" + states[max_index].strip()))
             if t != maxT - 1:
-                out.write(' ')
-        out.write(' \n')
+                out.write(" ")
+        out.write('\n')
 
 
 # Build alpha
@@ -100,27 +98,23 @@ def build_Beta_helper(sequence,word_dict,t, maxT, BetaMatrix, states, len_states
         return build_Beta_helper(sequence,word_dict,t-1, maxT, BetaMatrix, states, len_states,  prior, B,A) 
     # Recurse 
 
-    print('tttt')
     word = sequence[t+1].split('_')[0]
     index = word_dict[word]
-    print(word, index)
-    print("------Betaaaaaa", t)
-    print("****A")
-    print(A)
-    print("****B[index]")
-    print(B[:,index])
-    print("******BetaMatrix[0]\n")
-    print(BetaMatrix[0], "\n")
+    # print(word, index)
+    # print("------Betaaaaaa", t)
+    # print("****A")
+    # print(A)
+    # print("****B[index]")
+    # print(B[:,index])
+    # print("******BetaMatrix[0]\n")
+    # print(BetaMatrix[0], "\n")
     B_Beta = np.multiply(B[:,index], BetaMatrix[0])
-    print('B_BETA....')
-    print(B_Beta)
-    print('A......')
-    print(A)
+    # print('B_BETA....')
+    # print(B_Beta)
+    # print('A......')
+    # print(A)
     #BetaVec = np.dot(A, (np.multiply(B[:,index], BetaMatrix[0])))
     BetaVec = np.dot(A, B_Beta)
-    print("******BetaVec")
-    print(BetaVec,"\n")
-    
     BetaMatrix = np.vstack((BetaVec, BetaMatrix)) 
     return build_Beta_helper(sequence,word_dict,t-1,  maxT, BetaMatrix, states,len_states, prior, B,A) 
 

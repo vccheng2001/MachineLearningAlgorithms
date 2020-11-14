@@ -24,25 +24,23 @@ def main():
         words_dict[word] = i
 
     # Estimate yhat_t, assign tags based on state that max P(Yt=sj | x1:T)
-
     f = open(validation_input, "r")
     for row in f:
         sequence = row.split()
         maxT = len(sequence) 
         # print(sequence)
-        for t_state in range(maxT):
+        for t_state in range(0,maxT):
             # Build alpha 
             alphaMatrix = build_alpha(t_state, states, len_states, prior, B, A)
             BetaMatrix = build_Beta(t_state, maxT, states, len_states, prior, B, A)
-            # print(alphaMatrix)
-            # print(BetaMatrix)
             alphaBeta = np.multiply(alphaMatrix[t_state - 1], BetaMatrix[t_state - 1])
             max_index = np.argmax(alphaBeta)
-            print(words[t_state].split('_')[0] + "_" + states[max_index], end=" ")
+            print(sequence[t_state].split('_')[0] + "_" + states[max_index], end=" ")
         print('\n')
+    exit(0)
 
 
-
+# Build alpha
 def build_alpha(t_state, states, len_states, prior, B,A):
     # init 
     alphaMatrix = np.zeros((1,len_states))
@@ -51,25 +49,27 @@ def build_alpha(t_state, states, len_states, prior, B,A):
     alphaMatrix = build_alpha_helper(t, t_state, alphaMatrix, states, len_states,  prior, B,A)
     return alphaMatrix
 
-# Build alpha
+# Build alpha helper function
 def build_alpha_helper(t, t_state, alphaMatrix, states, len_states,  prior, B,A):
     alphaVec = np.zeros(len_states)
-    # Exit 
+    # Exit case 
     if (t == t_state): return alphaMatrix
-    # Base Case, start from t=0
+
+    # Base Case, start from t = 0
     if (t == 0):
         # p(starting state is j) * p(see observation 1 at state j)
         alphaVec= np.multiply(B[:,t], prior)
         # Update all states for timestep 1 
         alphaMatrix[0] = alphaVec
         return build_alpha_helper(t+1, t_state, alphaMatrix, states, len_states,  prior, B,A) 
+    
     # Recurse 
     for j in range(len_states): 
         aAsum = 0
         for k in range(len_states):
             aAsum += np.dot(alphaMatrix[t-1][k], A[k][j])
         alphaVec[j] = np.multiply(aAsum, B[j][t])
-    
+    # append to old matrix 
     alphaMatrix = np.vstack((alphaMatrix, alphaVec))
     return build_alpha_helper(t+1, t_state, alphaMatrix, states,len_states, prior, B,A) 
 
@@ -86,7 +86,7 @@ def build_Beta(t_state, maxT, states, len_states, prior, B,A):
 def build_Beta_helper(t, t_state, maxT, BetaMatrix, states, len_states,  prior, B,A):
     BetaVec = np.zeros(len_states)
     # Exit
-    if (t < 0): return BetaMatrix
+    if (t < t_state): return BetaMatrix
     # Base case, start from end (t=len_states)
     if (t == maxT - 1):
         BetaVec = np.ones(len_states)

@@ -52,8 +52,6 @@ def build_alpha(sequence, word_dict, maxT,states, len_states, prior, B,A):
     # starting t
     t = 0
     alphaMatrix = build_alpha_helper(sequence, word_dict, t, maxT, alphaMatrix, states, len_states,  prior, B,A)
-    print('alpha matrixxxxx')
-    print(alphaMatrix)
     return alphaMatrix
 
 # Build alpha helper function
@@ -75,22 +73,9 @@ def build_alpha_helper(sequence,word_dict, t, maxT, alphaMatrix, states, len_sta
         alphaVec= np.multiply(B[:,index], prior)
         # Update all states for timestep 1 
         alphaMatrix[0] = alphaVec
-        print("TIME 0")
-        print(alphaMatrix)
         return build_alpha_helper(sequence,word_dict, t+1, maxT, alphaMatrix, states, len_states,  prior, B,A) 
     
-    print('......', A.T)
-    print(alphaMatrix[t-1])
-    print(" \n ")
     alphaVec = np.multiply(B[:,index], np.dot(A.T, alphaMatrix[t-1]))
-    print("***B[:index]")
-    print(B[:,index])
-    print('***A.T')
-    print(A.T)
-    print('***a[t-1]')
-    print(alphaMatrix[t-1])
-    print('**vec')
-    print(alphaVec)
     alphaMatrix = np.vstack((alphaMatrix, alphaVec))
     return build_alpha_helper(sequence,word_dict, t+1, maxT,alphaMatrix, states,len_states, prior, B,A) 
 
@@ -115,12 +100,27 @@ def build_Beta_helper(sequence,word_dict,t, maxT, BetaMatrix, states, len_states
         return build_Beta_helper(sequence,word_dict,t-1, maxT, BetaMatrix, states, len_states,  prior, B,A) 
     # Recurse 
 
-    
-    word = sequence[t].split('_')[0]
+    print('tttt')
+    word = sequence[t+1].split('_')[0]
     index = word_dict[word]
-    print("------")
     print(word, index)
-    BetaVec = np.dot(A, (np.multiply(B[:,index], BetaMatrix[0])))
+    print("------Betaaaaaa", t)
+    print("****A")
+    print(A)
+    print("****B[index]")
+    print(B[:,index])
+    print("******BetaMatrix[0]\n")
+    print(BetaMatrix[0], "\n")
+    B_Beta = np.multiply(B[:,index], BetaMatrix[0])
+    print('B_BETA....')
+    print(B_Beta)
+    print('A......')
+    print(A)
+    #BetaVec = np.dot(A, (np.multiply(B[:,index], BetaMatrix[0])))
+    BetaVec = np.dot(A, B_Beta)
+    print("******BetaVec")
+    print(BetaVec,"\n")
+    
     BetaMatrix = np.vstack((BetaVec, BetaMatrix)) 
     return build_Beta_helper(sequence,word_dict,t-1,  maxT, BetaMatrix, states,len_states, prior, B,A) 
 

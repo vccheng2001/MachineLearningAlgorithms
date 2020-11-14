@@ -48,8 +48,7 @@ def main():
            # print(alphaBeta)
             max_index = np.argmax(alphaBeta)
            # print(max_index)
-            out.write((sequence[t].split('_')[0] + "_" + states[max_index]))
-            out.write(" ")
+            out.write((sequence[t].split('_')[0] + "_" + states[max_index].strip()))
         out.write(' \n')
 
 

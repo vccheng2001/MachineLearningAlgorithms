@@ -14,7 +14,6 @@ def main():
     # print(prior)
     # print(A)
     # print(B)
-
     len_states, len_words = np.size(states), np.size(words)
     states_dict, words_dict= {}, {}
     # put into states dict, map state to index 
@@ -28,25 +27,30 @@ def main():
 
     # Estimate yhat_t, assign tags based on state that max P(Yt=sj | x1:T)
     f = open(input_file, "r")
+    out = open(predicted_file, 'w')
     for row in f:
         sequence = row.split()
         # print(sequence)
         maxT = len(sequence) 
-        #print(sequence)
      
         alphaMatrix = build_alpha(maxT, states, len_states, prior, B, A)
         BetaMatrix = build_Beta(maxT, states, len_states, prior, B, A)
+        # print(alphaMatrix)
+        # print(BetaMatrix)
             # print(alphaMatrix)
             # print('------------\n')
             # print(BetaMatrix)
             # print('------------\n')
         for t in range(maxT):
+         #   print(alphaMatrix[t], BetaMatrix[t])
             alphaBeta = np.multiply(alphaMatrix[t], BetaMatrix[t])
             #print(alphaBeta)
+           # print(alphaBeta)
             max_index = np.argmax(alphaBeta)
-            print(sequence[t].split('_')[0] + "_" + states[max_index], end=" ")
-        
-        print('\n')
+           # print(max_index)
+            out.write((sequence[t].split('_')[0] + "_" + states[max_index]))
+            out.write(" ")
+        out.write(' \n')
 
 
 # Build alpha

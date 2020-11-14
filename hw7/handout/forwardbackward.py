@@ -3,7 +3,7 @@ import numpy as np
 
 # Performs forward-backward algorithm 
 def main():
-    (program, input_file, index_to_word, index_to_tag, hmmprior, hmmemit, hmmtrans, predicted_file, metric_file) = sys.argv
+    (program, input_file, index_to_word, index_to_tag, hmmprior, hmmemit, hmmtrans, predicted_file, metrics_file) = sys.argv
     states = np.loadtxt(index_to_tag, dtype='str')
     words = np.loadtxt(index_to_word, dtype='str') 
 
@@ -28,20 +28,31 @@ def main():
     # Estimate yhat_t, assign tags based on state that max P(Yt=sj | x1:T)
     f = open(input_file, "r")
     out = open(predicted_file, 'w')
+    metrics_out = open(metrics_file, 'w')
     for row in f:
         sequence = row.split()
         maxT = len(sequence) 
      
         alphaMatrix = build_alpha(sequence, word_dict, maxT, states, len_states, prior, B, A)
         BetaMatrix = build_Beta(sequence,word_dict,maxT, states, len_states, prior, B, A)
-        # exit(0)
+        correct = 0
         for t in range(maxT):
             alphaBeta = np.multiply(alphaMatrix[t], BetaMatrix[t])
             max_index = np.argmax(alphaBeta)
-            out.write((sequence[t].split('_')[0] + "_" + states[max_index].strip()))
+            (orig_word, orig_tag) = sequence[t].split('_')
+            new_tag = states[max_index].strip()
+            out.write((orig_word + "_" + new_tag))
+            if orig_tag == new_tag:
+                correct += 1
             if t != maxT - 1:
                 out.write(" ")
         out.write('\n')
+
+        log_likelihood = np.log(np.sum(alphaMatrix[maxT-1]))
+        metrics_out.write("Average Log-Likelihood: %s\n" % str(log_likelihood))
+        metrics_out.write("Accuracy: %s\n" % str(correct/maxT) ) 
+
+    # Log likelihood of sequence 
 
 
 # Build alpha

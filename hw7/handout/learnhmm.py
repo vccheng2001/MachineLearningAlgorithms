@@ -61,9 +61,12 @@ def build_hmmtrans(states, states_dict, len_states, input_file, output_file):
             trans[j][k] += 1 # state k after state j 
     # add pseudocount 
     trans_with_pseudo = (trans + 1)
+    print(trans_with_pseudo)
     # sum over states
-    sum_over_states = trans_with_pseudo.sum(axis=0, keepdims=True)
+    sum_over_states = trans_with_pseudo.sum(axis=1, keepdims=True)
+    print(sum_over_states)
     trans = np.divide(trans_with_pseudo, sum_over_states)
+    print(trans)
     # Write to output trans file 
     np.savetxt(output_file, trans, delimiter=" ")
     f.close()   

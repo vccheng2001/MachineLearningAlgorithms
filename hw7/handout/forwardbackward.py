@@ -46,8 +46,10 @@ def main():
         sumTs += maxT  
         # Build alpha
         alphaMatrix = build_alpha(sequence, word_dict, maxT, states, len_states, prior, B, A)
+        print(alphaMatrix)
         # Build Beta
         BetaMatrix = build_Beta(sequence,word_dict,maxT, states, len_states, prior, B, A)
+        print(BetaMatrix)
         # For each 'timestep' t
         for t in range(maxT):
             # Get prob 
@@ -66,7 +68,7 @@ def main():
                 output.write(" ")
         output.write('\n')
         # Add log likelihood contribution for sequence 
-        sumLogLikelihood += np.log(np.sum(alphaMatrix[maxT-1]))
+        sumLogLikelihood += logsumexp(alphaMatrix[maxT-1])
     # Average log likelihood over all sequences 
     averageLogLikelihood = sumLogLikelihood / numRows
     # Metrics predictions 
@@ -99,10 +101,17 @@ def build_alpha_helper(sequence,word_dict, t, maxT, alphaMatrix, states, len_sta
         alphaMatrix[0] = alphaVec
         return build_alpha_helper(sequence,word_dict, t+1, maxT, alphaMatrix, states, len_states,  prior, B,A) 
     # Recurse forwards, t > 0
-    alphaVec = np.multiply(B[:,index], np.dot(A.T, alphaMatrix[t-1]))
+    m = np.max(alphaMatrix[t-1])
+    alphaVec = np.log(B[:,index]) + m + np.log(np.dot(A.T, np.exp(alphaMatrix[t-1] - m)))
     # Append vector to matrix 
     alphaMatrix = np.vstack((alphaMatrix, alphaVec))
     return build_alpha_helper(sequence,word_dict, t+1, maxT,alphaMatrix, states,len_states, prior, B,A) 
+
+
+def logsumexp(v):
+    m = np.max(v)
+    return m + np.log(np.sum(np.exp(v-m)))
+
 
 # Build Beta
 def build_Beta(sequence,word_dict,maxT, states, len_states, prior, B,A):
@@ -128,8 +137,8 @@ def build_Beta_helper(sequence,word_dict,t, maxT, BetaMatrix, states, len_states
     word = sequence[t+1].split('_')[0]
     index = word_dict[word]
     # Recurse backwards 
-    B_Beta = np.multiply(B[:,index], BetaMatrix[0])
-    BetaVec = np.dot(A, B_Beta)
+    m = np.max(BetaMatrix[0])
+    BetaVec = m + np.log(np.dot(A, np.multiply(B[:,index], np.exp(BetaMatrix[0] - m))))
     # Append vector to matrix 
     BetaMatrix = np.vstack((BetaVec, BetaMatrix)) 
     return build_Beta_helper(sequence,word_dict,t-1,  maxT, BetaMatrix, states,len_states, prior, B,A)

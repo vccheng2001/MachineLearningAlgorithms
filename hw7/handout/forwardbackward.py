@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-
+import matplotlib.pyplot as plt
 # Performs forward-backward algorithm 
 def main():
     (program, input_file, index_to_word, index_to_tag, hmmprior, hmmemit, hmmtrans, predicted_file, metrics_file) = sys.argv
@@ -46,10 +46,10 @@ def main():
         sumTs += maxT  
         # Build alpha
         alphaMatrix = build_alpha(sequence, word_dict, maxT, states, len_states, prior, B, A)
-        print(alphaMatrix)
+        # print(alphaMatrix)
         # Build Beta
         BetaMatrix = build_Beta(sequence,word_dict,maxT, states, len_states, prior, B, A)
-        print(BetaMatrix)
+        # print(BetaMatrix)
         # For each 'timestep' t
         for t in range(maxT):
             # Get prob 
@@ -74,7 +74,13 @@ def main():
     # Metrics predictions 
     metrics.write("Average Log-Likelihood: %s\n" % str(averageLogLikelihood))
     metrics.write("Accuracy: %s\n" % str(numCorrect/sumTs) ) 
-
+    seq_array = [10]
+    avg_LL_array = [averageLogLikelihood]
+    plt.plot(seq_array, avg_LL_array, color="blue", label="Train")
+    plt.ylabel("Average Log Likelihood")
+    plt.xlabel("# Sequences")
+    plt.title("HMM")
+    plt.show()
 
 # Build alpha
 def build_alpha(sequence, word_dict, maxT,states, len_states, prior, B,A):
@@ -96,13 +102,14 @@ def build_alpha_helper(sequence,word_dict, t, maxT, alphaMatrix, states, len_sta
     # Base Case, start from t = 0
     if (t == 0): 
         # p(starting state is j) * p(see observation 0 at state j)
-        alphaVec= np.multiply(B[:,index], prior)
+        alphaVec= (np.log(B[:,index]) + np.log(prior))
         # Update all states for timestep 0
         alphaMatrix[0] = alphaVec
         return build_alpha_helper(sequence,word_dict, t+1, maxT, alphaMatrix, states, len_states,  prior, B,A) 
     # Recurse forwards, t > 0
     m = np.max(alphaMatrix[t-1])
     alphaVec = np.log(B[:,index]) + m + np.log(np.dot(A.T, np.exp(alphaMatrix[t-1] - m)))
+    #np.multiply(B[:,index], np.dot(A.T, alphaMatrix[t-1]))
     # Append vector to matrix 
     alphaMatrix = np.vstack((alphaMatrix, alphaVec))
     return build_alpha_helper(sequence,word_dict, t+1, maxT,alphaMatrix, states,len_states, prior, B,A) 
@@ -130,7 +137,7 @@ def build_Beta_helper(sequence,word_dict,t, maxT, BetaMatrix, states, len_states
     if (t < 0): return BetaMatrix
     # Base case, start from maxT - 1 (end)
     if (t == maxT - 1):
-        BetaVec = np.ones(len_states)
+        BetaVec = np.log(np.ones(len_states))
         BetaMatrix[0] = BetaVec 
         return build_Beta_helper(sequence,word_dict,t-1, maxT, BetaMatrix, states, len_states,  prior, B,A) 
     # Get index of current word in sequence 
@@ -138,7 +145,9 @@ def build_Beta_helper(sequence,word_dict,t, maxT, BetaMatrix, states, len_states
     index = word_dict[word]
     # Recurse backwards 
     m = np.max(BetaMatrix[0])
-    BetaVec = m + np.log(np.dot(A, np.multiply(B[:,index], np.exp(BetaMatrix[0] - m))))
+    BetaVec = m+np.log(np.dot(A, np.add(B[:,index],np.exp(BetaMatrix[0] - m))))
+
+    #BetaVec = np.dot(A, np.multiply(B[:,index], BetaMatrix[0]))
     # Append vector to matrix 
     BetaMatrix = np.vstack((BetaVec, BetaMatrix)) 
     return build_Beta_helper(sequence,word_dict,t-1,  maxT, BetaMatrix, states,len_states, prior, B,A)

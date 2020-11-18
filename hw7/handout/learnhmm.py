@@ -7,6 +7,10 @@ def main():
     words = np.loadtxt(index_to_word, dtype='str') 
     len_states, len_words = np.size(states), np.size(words)
     states_dict, words_dict= {}, {}
+
+    hmmprior = hmmprior.split(".")[0]
+    hmmtrans = hmmtrans.split(".")[0]
+    hmmemit =  hmmemit.split(".")[0] 
     # put into states dict, map state to index 
     for i in range(len_states):
         state = states[i]
@@ -16,20 +20,23 @@ def main():
         word = words[i]
         words_dict[word] = i
     
-    # Build prior vector pi
-    build_hmmprior(states, states_dict, len_states,  train_input,  hmmprior)
-    # Build transition matrix A 
-    build_hmmtrans(states, states_dict, len_states, train_input, hmmtrans)
-    # Build emission matrix B
-    build_hmmemit(states, states_dict, len_states, words, words_dict, len_words, train_input, hmmemit)
+    seq_array = [10,100,1000,10000]
+    for num_seq in seq_array:
+        # Build prior vector pi
+        build_hmmprior(num_seq, states, states_dict, len_states,  train_input,  hmmprior)
+        # Build transition matrix A 
+        build_hmmtrans(num_seq, states, states_dict, len_states, train_input, hmmtrans)
+        # Build emission matrix B
+        build_hmmemit(num_seq, states, states_dict, len_states, words, words_dict, len_words, train_input, hmmemit)
 
 
 # Build prior vector pi
-def build_hmmprior(states, states_dict, len_states, input_file,output_file):
+def build_hmmprior(num_seq, states, states_dict, len_states, input_file, output_file):
     prior = np.zeros(len_states)
     f = open(input_file, "r")
     # Init states 
-    for row in f:
+    for i in range(num_seq):
+        row = f.readline()
         first = row.split()[0]
         first_tag = first.split('_')[1]
         index = states_dict[first_tag]
@@ -41,15 +48,16 @@ def build_hmmprior(states, states_dict, len_states, input_file,output_file):
     # prob: N(y1=sj)+1/sum(N(y1=sp) + 1))
     prior = np.divide(prior_with_pseudo, total_sum)
     # Write to hmmprior output file 
-    np.savetxt(output_file, prior, delimiter=" ")
+    np.savetxt(output_file+str(num_seq)+".txt", prior, delimiter=" ")
     f.close()
 
 # Build A (Transition) matrix (len_states x len_words)
-def build_hmmtrans(states, states_dict, len_states, input_file, output_file):
+def build_hmmtrans(num_seq, states, states_dict, len_states, input_file, output_file):
     trans = np.zeros((len_states, len_states))
     f = open(input_file, "r")
     # Number of times sj is associated with the word k
-    for row in f: 
+    for i in range(num_seq):
+        row = f.readline()
         sequence = row.split()
         # Get each curr_state, next_state pair in sequence 
         for i in range(len(sequence) - 1):
@@ -68,16 +76,17 @@ def build_hmmtrans(states, states_dict, len_states, input_file, output_file):
     trans = np.divide(trans_with_pseudo, sum_over_states)
     print(trans)
     # Write to output trans file 
-    np.savetxt(output_file, trans, delimiter=" ")
+    np.savetxt(output_file+str(num_seq)+".txt", trans, delimiter=" ")
     f.close()   
 
 
 # Build B (Emission) matrix (len_states x len_words)
-def build_hmmemit(states, states_dict, len_states, words, words_dict, len_words, input_file, output_file):
+def build_hmmemit(num_seq, states, states_dict, len_states, words, words_dict, len_words, input_file, output_file):
     emit = np.zeros((len_states, len_words))
     f = open(input_file, "r")
     # Number of times sj is associated with the word k
-    for row in f: 
+    for i in range(num_seq):
+        row = f.readline()
         sequence = row.split()
         for seq in sequence:
             (word, state) = seq.split('_')
@@ -91,7 +100,7 @@ def build_hmmemit(states, states_dict, len_states, words, words_dict, len_words,
     # prob: N(y1=sj)+1/sum(N(y1=sp) + 1))
     emit = np.divide(emit_with_pseudo, sum_over_states)
     # Write to output emit file 
-    np.savetxt(output_file, emit, delimiter=" ")
+    np.savetxt(output_file+str(num_seq)+".txt", emit, delimiter=" ")
     f.close()            
 
         

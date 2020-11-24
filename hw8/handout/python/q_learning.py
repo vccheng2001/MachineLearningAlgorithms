@@ -13,32 +13,39 @@ import math
 
 def main():
     (program, mode, weight_out, returns_out, episodes, max_iterations, epsilon, gamma, alpha) = sys.argv
-    epsilon, episodes, max_iterations = float(epsilon), int(episodes), int(max_iterations)
+    epsilon, gamma, alpha, episodes, max_iterations = float(epsilon), float(gamma), float(alpha), int(episodes), int(max_iterations)
     # Initialize mountain car 
     car = MountainCar(mode, 1) # fixes at pos = 0.8, vel = 1
     # Set up
-    Q = []
+    Q = {}
     num_actions, actions = 3, (0,1,2)
-    weights = np.zeros((car.state_space, num_actions))
+    w = {}
     bias = 0
+    ss = car.state_space
     # Do actions
     for episode in range(episodes):
-        state = car.state 
         num_iters = 0
         while num_iters < max_iterations:
             num_iters += 1
+            print('curr state')
+            state = car.state 
+            state = tuple(state)
             # With prob epsilon, pick random action
             prob = random.random() 
             action = random.choice(actions) if (prob < epsilon) else getBestAction(Q, state, actions)
             # Observe sample 
             (next_state, reward, done) = car.step(action)
+            next_state = tuple(next_state)
+            # Sample
             sample = reward + gamma * bestQVal(Q, next_state) # get best value
-            w = update_w(Q, state, action, w, bias)
+
+            w = update_w(Q, state, action, w, bias, ss)
             Q = update_Q(Q, state, action, w, bias)
             gradient = state
-            # update weights 
-            w[state][action] = w[state][action] - (alpha * (Q[state][action] - sample)) * gradient
-            bias = bias - (alpha * (Q[state][action] - sample)) * gradient
+            # update weights
+            diff = Q[state][action] - sample
+            w[state][action] = w[state][action] - np.multiply(alpha * diff,  gradient)
+            bias =  bias - np.multiply(alpha * diff,  gradient)
             if done: car.reset()
             else: state = next_state
         car.reset()
@@ -51,13 +58,11 @@ def bestQVal(Q, next_state):
     else:
         return max(Q[next_state].values())
 
-def update_w(Q, state, action, w, bias):
+def update_w(Q, state, action, w, bias, ss):
     if not state in w:
-        w[state] = []
+        w[state] = {}
     if not action in w[state]:
-        w[state][action] = 0
-    else:
-        w[state][action] = np.dot(state, w[state][action]) + bias
+        w[state][action] = np.zeros(ss)
     return w
 
 def update_Q(Q, state, action, w, bias):
@@ -77,10 +82,16 @@ def update_Q(Q, state, action, w, bias):
 
 # Return best action for given state 
 def getBestAction(Q, state, actions):
+    if not state in Q:
+        Q[state] = {}
     bestAction = None
     bestQ= float('-inf')
     for action in actions:
-        currQ = Q[state][action] 
+        # If not initialized, set to 0
+        if not action in Q[state]:
+            Q[state][action] = 0
+        # Get Q val of state, action
+        currQ = Q[state][action]
         if currQ >= bestQ:
             bestAction = action
             bestQ = currQ

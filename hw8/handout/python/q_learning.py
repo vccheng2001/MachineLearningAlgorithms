@@ -14,24 +14,32 @@ def main():
     # Output files 
     w_out = open(weight_out, 'w')
     r_out = open(returns_out, 'w')
+    car = MountainCar(mode=mode)
+    state = tuple(car.state)
+    ss = car.state_space
     # Do actions
-    for episode in range(episodes):
+    for episode in range(1):
         num_iters = 0
         total_rewards = 0
-        car = MountainCar(mode=mode)
-        state = tuple(car.state)
-        ss = car.state_space
-        while num_iters < max_iterations:
+        while num_iters < 4:
             num_iters += 1
+            print(Q)
+            print(state)
             Q = init_Q(Q, state, actions)
+            print(Q)
+            print('\n')
             # With prob epsilon, pick random action
             prob = random.random() 
             action = random.choice(actions) if (prob < epsilon) else getBestAction(Q, state, actions)
             # Observe sample 
             (next_state, reward, done) = car.step(action)
             next_state = tuple(next_state.values())
+            print('nextstate', Q)
+            print(next_state)
             Q = init_Q(Q, next_state, actions)
-            #print(state, next_state)
+            print(Q)
+            print('\n')
+            # print(state, next_state)
             # Add curr reward 
             total_rewards += reward 
             # Sample
@@ -43,6 +51,9 @@ def main():
             diff = Q[state][action] - sample
             w[:,action] = w[:,action] - alpha*diff*w_gradient
             bias =  bias - alpha*diff*1
+            print('updated state')
+            print(Q)
+            print('\n')
             if done:
                 car.reset()
                 break

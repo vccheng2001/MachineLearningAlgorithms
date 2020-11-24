@@ -10,6 +10,7 @@ def main():
     # Set up
     actions, num_actions = (0,1,2), 3 
     car = MountainCar(mode=mode)
+    state = tuple(car.state)
     ss = car.state_space
     Q = {}
     # weights: 2 by 3 matrix 
@@ -20,12 +21,10 @@ def main():
     r_out = open(returns_out, 'w')
     # Do actions
     for episode in range(episodes):
-        print('episode', episode)
         num_iters = 0
         total_rewards = 0
         while num_iters < max_iterations:
             num_iters += 1
-            state = tuple(car.state)
             # Init Q[state] for all actions
             Q = init_Q(Q, state, actions)
             # With prob epsilon, pick random action
@@ -36,21 +35,21 @@ def main():
             next_state = tuple(next_state)
             # Add curr reward 
             total_rewards += reward 
-            if done: 
+            # Init next state Q
+            Q = init_Q(Q, next_state, actions)
+            # Sample
+            sample = reward + gamma * bestQVal(Q, next_state) # get best value
+            # Calculate q
+            Q[state][action] = np.dot(np.asarray(state), w[:,action]) + bias
+            # Update weights
+            w_gradient = np.asarray(state).T
+            diff = Q[state][action] - sample
+            w[:,action] = w[:,action] - alpha*diff*w_gradient
+            bias =  bias - alpha*diff*1
+            state = next_state
+            if done:
                 car.reset()
                 break
-            else:
-                # Init next state Q
-                Q = init_Q(Q, next_state, actions)
-                # Sample
-                sample = reward + gamma * bestQVal(Q, next_state) # get best value
-                # Calculate q
-                Q[state][action] = np.dot(np.asarray(state), w[:,action]) + bias
-                # Update weights
-                wgradient = np.asarray(state).T
-                diff = alpha * (Q[state][action] - sample)
-                w[:,action] = w[:,action] - diff*wgradient
-                bias =  bias - diff
         # Print rewards 
         r_out.write(str(total_rewards)+ "\n")
         car.reset()

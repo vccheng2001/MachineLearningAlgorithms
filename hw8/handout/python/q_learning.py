@@ -47,7 +47,7 @@ def main():
                 # Sample
                 sample = reward + gamma * bestQVal(Q, next_state) # get best value
                 # Calculate q
-                Q[state][action] = np.dot(np.asarray(state), np.asarray(w[:,action])) + bias
+                Q[state][action] = np.dot(np.asarray(state), w[:,action]) + bias
                 # Update weights
                 wgradient = state
                 diff = Q[state][action] - sample

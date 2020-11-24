@@ -40,7 +40,6 @@ def main():
             print('next state', next_state)
             # Sample
             sample = reward + gamma * bestQVal(Q, next_state) # get best value
-
             w = update_w(Q, state, action, w, bias, ss)
             Q = update_Q(Q, state, action, w, bias)
             gradient = state
@@ -95,7 +94,7 @@ def getBestAction(Q, state, actions):
             Q[state][action] = 0
         # Get Q val of state, action
         currQ = Q[state][action]
-        if currQ >= bestQ:
+        if currQ > bestQ:
             bestAction = action
             bestQ = currQ
     print("BESTQ", bestQ)

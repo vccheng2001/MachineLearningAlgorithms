@@ -15,7 +15,7 @@ def main():
     (program, mode, weight_out, returns_out, episodes, max_iterations, epsilon, gamma, alpha) = sys.argv
     epsilon, gamma, alpha, episodes, max_iterations = float(epsilon), float(gamma), float(alpha), int(episodes), int(max_iterations)
     # Initialize mountain car 
-    car = MountainCar(mode, 1) # fixes at pos = 0.8, vel = 1
+    car = MountainCar(mode, None) # fixes at pos = 0.8, vel = 1
     # Set up
     Q = {}
     num_actions, actions = 3, (0,1,2)
@@ -27,15 +27,17 @@ def main():
         num_iters = 0
         while num_iters < max_iterations:
             num_iters += 1
-            print('curr state')
+            print('curr state', car.state)
             state = car.state 
             state = tuple(state)
             # With prob epsilon, pick random action
             prob = random.random() 
             action = random.choice(actions) if (prob < epsilon) else getBestAction(Q, state, actions)
+            print('action', action)
             # Observe sample 
             (next_state, reward, done) = car.step(action)
             next_state = tuple(next_state)
+            print('next state', next_state)
             # Sample
             sample = reward + gamma * bestQVal(Q, next_state) # get best value
 
@@ -45,7 +47,9 @@ def main():
             # update weights
             diff = Q[state][action] - sample
             w[state][action] = w[state][action] - np.multiply(alpha * diff,  gradient)
-            bias =  bias - np.multiply(alpha * diff,  gradient)
+            bias =  bias - (alpha * diff * 1)
+            print('weight', w[state])
+            print('bias', bias)
             if done: car.reset()
             else: state = next_state
         car.reset()
@@ -54,6 +58,8 @@ def main():
 def bestQVal(Q, next_state):
     if not next_state in Q:
         Q[next_state] = {}
+        return 0
+    elif Q[next_state] == {}:
         return 0
     else:
         return max(Q[next_state].values())
@@ -68,17 +74,14 @@ def update_w(Q, state, action, w, bias, ss):
 def update_Q(Q, state, action, w, bias):
     if not state in Q:
         Q[state] = {}
-    Q[state][action] = np.dot(state, w[state][action]) + bias
+    # print('-----')
+    # print(state)
+    # print(np.asarray(state))
+    # print(w[state][action])
+    # print(np.asarray(w[state][action]))
+    Q[state][action] = np.dot(np.asarray(state), np.asarray(w[state][action])) + bias
+    print('UPDATE Q Q[state][action]', Q[state][action])
     return Q 
-
-
-# def update_weight(state, reward, action, weights, bias, learning_rate, gamma):
-#     sample = reward + gamma(maxQnext)
-#     currQ = np.dot(state, weights[:,action]) + bias
-#     gradient = state
-#     weights = weights - learning_rate*(currQ - sample)*gradient
-#     bias = bias - learning_rate*(currQ - sample)*gradient 
-#     return weights 
 
 # Return best action for given state 
 def getBestAction(Q, state, actions):
@@ -95,6 +98,7 @@ def getBestAction(Q, state, actions):
         if currQ >= bestQ:
             bestAction = action
             bestQ = currQ
+    print("BESTQ", bestQ)
     return bestAction 
 
 if __name__ == "__main__":

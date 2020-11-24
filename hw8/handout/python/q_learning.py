@@ -26,8 +26,7 @@ def main():
         total_rewards = 0
         while num_iters < max_iterations:
             num_iters += 1
-            state = car.state 
-            state = tuple(state)
+            state = tuple(car.state)
             # Init Q[state] for all actions
             Q = init_Q(Q, state, actions)
             # With prob epsilon, pick random action
@@ -35,13 +34,13 @@ def main():
             action = random.choice(actions) if (prob < epsilon) else getBestAction(Q, state, actions)
             # Observe sample 
             (next_state, reward, done) = car.step(action)
+            next_state = tuple(next_state)
             # Add curr reward 
             total_rewards += reward 
             if done: 
                 car.reset()
                 break
             else:
-                next_state = tuple(next_state)
                 # Init next state Q
                 Q = init_Q(Q, next_state, actions)
                 # Sample
@@ -49,10 +48,10 @@ def main():
                 # Calculate q
                 Q[state][action] = np.dot(np.asarray(state), w[:,action]) + bias
                 # Update weights
-                wgradient = state
-                diff = Q[state][action] - sample
-                w[:,action] = w[:,action] - np.multiply(alpha * diff,  wgradient)
-                bias =  bias - (alpha * diff * 1)
+                wgradient = np.asarray(state).T
+                diff = alpha * (Q[state][action] - sample)
+                w[:,action] = w[:,action] - diff*wgradient
+                bias =  bias - diff
         # Print rewards 
         r_out.write(str(total_rewards)+ "\n")
         car.reset()

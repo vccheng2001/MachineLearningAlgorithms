@@ -3,9 +3,17 @@ from environment import MountainCar
 import pyglet
 import numpy as np
 import random 
+import math 
 
-
+def map_state_to_index(state):
+    (pos, vel) = state 
+    col = (pos + 1.2)/0.36
+    row = (vel + 0.07)/0.03 
+    print(math.floor(row), math.floor(col))
 def main():
+    map_state_to_index([0.11,-0.05])
+
+def hi():
     (program, mode, weight_out, returns_out, episodes, max_iterations, epsilon, gamma, alpha) = sys.argv
     epsilon, episodes, max_iterations = float(epsilon), int(episodes), int(max_iterations)
     # Initialize mountain car 
@@ -25,15 +33,15 @@ def main():
             action = random.choice(action) if (prob < epsilon) else  0 #getBestAction(Q, state, actions)
             # Observe sample 
             (state, reward, done) = car.step(action)
-            if done:
-                print('done')
-                car.reset()
+            index = map_state_to_index(state)
+            if done: car.reset()
             else:
                 # As array
                 state = np.fromiter(state.values(), dtype=float)
                 # Update q 
-                Q[state][action] = np.dot(state, w[state][action]) + bias
-                sample = reward + gamma * (maxQnext)
+                w = update_w(Q, state, action, w, bias)
+                Q = update_Q(Q, state, action, w, bias)
+                #sample = reward + gamma * (maxQnext)
                 gradient = state
                 # update weights 
                 w[state][action] = w[state][action] - (alpha * (Q[state][action] - sample)) * gradient
@@ -41,10 +49,20 @@ def main():
         car.reset()
     car.close()
 
-def update_Q(Q, state, weights):
-    if state not in Q:
-        Q[state] = []
+def update_w(Q, state, action, w, bias):
+    if not state in w:
+        w[state] = []
+    if not action in w[state]:
+        w[state][action] = 0
+    else:
+        w[state][action] = np.dot(state, w[state][action]) + bias
+    return w
 
+def update_Q(Q, state, action, w, bias):
+    if not state in Q:
+        Q[state] = []
+    Q[state][action] = np.dot(state, w[state][action]) + bias
+    return Q 
 
 
 # def update_weight(state, reward, action, weights, bias, learning_rate, gamma):

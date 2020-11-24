@@ -1,6 +1,5 @@
 import sys
 from environment import MountainCar
-import pyglet
 import numpy as np
 import random 
 import math 
@@ -10,7 +9,7 @@ def main():
     epsilon, gamma, alpha, episodes, max_iterations = float(epsilon), float(gamma), float(alpha), int(episodes), int(max_iterations)
     # Set up
     actions, num_actions = (0,1,2), 3 
-    car = MountainCar(mode, 1)
+    car = MountainCar(mode=mode)
     ss = car.state_space
     Q = {}
     # weights: 2 by 3 matrix 

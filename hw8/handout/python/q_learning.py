@@ -11,7 +11,7 @@ def main():
     w_out = open(weight_out, 'w')
     r_out = open(returns_out, 'w')
     # Initialize Mountain Car 
-    car = MountainCar(mode=mode)
+    car = MountainCar(mode=mode, fixed=1)
     actions, num_actions = (0,1,2), 3
     # Weights: 2 by 3 matrix 
     Q = {}
@@ -24,8 +24,10 @@ def main():
         done = False
         num_iters = 0
         total_rewards = 0
-        state = tuple(car.reset())
-        while not done:
+        # Convert dict to tuple with dict's values 
+        state_dict = car.reset()
+        state = tuple(state_dict.values())
+        while True:
             num_iters += 1
 
             if num_iters > max_iterations:
@@ -33,10 +35,9 @@ def main():
                 break
         
             if not state in Q:
+                # initialize Q values for each action to 0 
                 Q[state] = {0:0, 1:0, 2:0}
-            else:
-                print('already theree')
-                print(Q[state])
+
             # With prob epsilon, pick random action
             prob = random.random() 
             # print('prob', prob)
@@ -44,21 +45,17 @@ def main():
             # print('action chosen', action)
 
             # Observe sample 
-            (next_state, reward, done) = car.step(action)
-            next_state = tuple(next_state.values())
-            print(state, next_state)
-            # print('state nextstate', state, next_state)
-
+            (next_state_dict, reward, done) = car.step(action)
+            next_state = tuple(next_state_dict.values())
+            # Add curr reward 
+            total_rewards += reward 
+      
             if done: 
                 car.reset() 
                 break 
             else: 
-                
-                # Add curr reward 
-                total_rewards += reward 
-
                 # Sample
-                if not next_state in Q:
+                if not next_state in Q: # Init next_state Q values to 0
                     Q[next_state] = {0:0, 1:0, 2:0}
                 sample = reward + (gamma * bestQVal(Q, next_state)) # get best value
                 Q[state][action] = np.dot(np.asarray(state), w[:,action]) + bias
@@ -70,8 +67,7 @@ def main():
                 bias = bias - alpha*diff*1
                 state = next_state
             
-        # Reset, print rewards 
-        car.reset() 
+        # Print rewards 
         r_out.write(str(total_rewards)+ "\n")
         
     # Print weight outputs 

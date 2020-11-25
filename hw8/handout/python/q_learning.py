@@ -15,7 +15,10 @@ def main():
     actions, num_actions = (0,1,2), 3
     # Weights: 2 by 3 matrix 
     Q = {}
-    w = np.zeros((2, num_actions))
+    w0 = np.array([0,0])
+    w1 = np.array([0,0])
+    w2 = np.array([0,0])
+    w = [w0, w1, w2]
     bias = 0
 
 
@@ -40,9 +43,7 @@ def main():
 
             # With prob epsilon, pick random action
             prob = random.random() 
-            # print('prob', prob)
             action = random.choice(actions) if (prob < epsilon) else getBestAction(Q, state, actions)
-            # print('action chosen', action)
 
             # Observe sample 
             (next_state_dict, reward, done) = car.step(action)
@@ -58,12 +59,12 @@ def main():
                 if not next_state in Q: # Init next_state Q values to 0
                     Q[next_state] = {0:0, 1:0, 2:0}
                 sample = reward + (gamma * bestQVal(Q, next_state)) # get best value
-                Q[state][action] = np.dot(np.asarray(state), w[:,action]) + bias
+                Q[state][action] = np.dot(np.asarray(state), w[action]) + bias
 
                 # Update weights
                 w_gradient = np.asarray(state).T
                 diff = Q[state][action] - sample
-                w[:,action] = w[:,action] - alpha*diff*w_gradient
+                w[action] = w[action] - alpha*diff*w_gradient
                 bias = bias - alpha*diff*1
                 state = next_state
             
@@ -72,8 +73,7 @@ def main():
         
     # Print weight outputs 
     w_out.write(str(bias)+'\n')
-    w_list = w.flatten(order='C')
-    for i in w_list:
+    for i in w:
         w_out.write(str(i) + '\n')
 
     # Close
@@ -81,16 +81,6 @@ def main():
     w_out.close()
     r_out.close()
 
-
-def init_Q(Q, state, actions):
-    if not state in Q:
-        Q[state] = {}
-    else:
-        print(state, Q[state])
-    for action in actions:
-        if not action in Q[state]:
-            Q[state][action] = 0
-    return Q 
 
 def bestQVal(Q, next_state):
     return max(Q[next_state].values())

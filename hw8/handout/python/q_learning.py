@@ -31,6 +31,7 @@ def main():
         # Convert dict to tuple with dict's values 
         state_dict = car.reset()
         state = tuple(state_dict.values())
+        print("STARTING STATE FOR EPISODE", state)
         while True:
             print("\n ITER NUMBER %d \n" % num_iters)
             num_iters += 1
@@ -42,6 +43,9 @@ def main():
             if not state in Q:
                 # initialize Q values for each action to 0 
                 Q[state] = {0:0, 1:0, 2:0}
+            else:
+                print("Already have this state", state)
+            print("curr state", state)
             print("Q is...", Q)
 
             # With prob epsilon, pick random action
@@ -65,6 +69,8 @@ def main():
                 # Sample
                 if not next_state in Q: # Init next_state Q values to 0
                     Q[next_state] = {0:0, 1:0, 2:0}
+                else:
+                    print("Already have next state", next_state)
                 print("Q with ns", Q)
                 print("Gamma", gamma)
                 sample = reward + (gamma * bestQVal(Q, next_state)) # get best value

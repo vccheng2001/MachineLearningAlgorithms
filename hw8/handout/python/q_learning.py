@@ -3,6 +3,7 @@ from environment import MountainCar
 import numpy as np
 import random 
 import math 
+import matplotlib.pyplot as plt
 
 def main():
     (program, mode, weight_out, returns_out, episodes, max_iterations, epsilon, gamma, alpha) = sys.argv
@@ -16,6 +17,11 @@ def main():
     # Weights: <dim(S)> by <num_actions> matrix 
     w = np.zeros((car.state_space ,num_actions))
     bias = 0
+    rewards_array = []
+    episodes_array = []
+
+    roll_mean_x= []
+    roll_mean_y = []
 
     # Represent state as numpy array 
     def state_rep(state_dict, mode):
@@ -69,13 +75,26 @@ def main():
                 break 
 
         # Print rewards 
-        r_out.write(str(total_rewards)+ "\n")
-        
-    # Print weight outputs 
-    w_out.write(str(bias)+'\n')
-    for row in w:
-        for elem in row:
-            w_out.write(str(elem) + '\n')
+        # r_out.write(str(total_rewards)+ "\n")
+        rewards_array.append(total_rewards)
+        episodes_array.append(i+1)
+        if i > 0 and i % 25 == 0:
+            roll_mean_x.append(i)
+            roll_mean_y.append(sum(rewards_array[i-25:i-1])/25)
+    # # Print weight outputs 
+    # w_out.write(str(bias)+'\n')
+    # for row in w:
+    #     for elem in row:
+    #         w_out.write(str(elem) + '\n')
+
+
+    plt.plot(episodes_array, rewards_array, color="blue", label="returns")
+    plt.plot(roll_mean_x, roll_mean_y, color="red", label="rolling mean returns")
+ 
+    plt.ylabel("Returns")
+    plt.xlabel("# Episodes")
+    plt.title("Q-Learning, Raw Mode")
+    plt.show()
 
     # Close
     car.close()

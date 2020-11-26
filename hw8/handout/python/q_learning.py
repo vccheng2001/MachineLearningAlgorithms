@@ -21,60 +21,60 @@ def main():
 
     # Do actions
     for i in range(episodes):
-     #   print("Episode number %d" % i)
-        done = False
+        # Initialize 
         num_iters = 0
         total_rewards = 0
-        # Convert dict to tuple with dict's values 
+        # Raw dictionary 
         state_dict = car.reset()
+        # Convert to numpy array 
         state = np.asarray(list(state_dict.values()))
 
-       # print("STARTING STATE FOR EPISODE", state)
-        while True:
-            #print("\n ITER NUMBER %d \n" % num_iters)
+        while num_iters < max_iterations:   
             num_iters += 1
-            if num_iters > max_iterations:
-                car.reset()
-                break
 
             # E greedy 
             action = getAction(Q, state, actions, epsilon, w, bias)
             
             # Observe sample 
             (next_state_dict, reward, done) = car.step(action)
-            next_state = np.asarray(list(next_state_dict.values()))
-           
-            # Sample
-            next_action = getBestAction(Q, next_state, actions, w, bias)
-           
+
+            # Add current reward 
             total_rewards += reward 
+
+            # Next state
+            next_state = np.asarray(list(next_state_dict.values()))
+            next_action = getBestAction(Q, next_state, actions, w, bias)
+            next_state_max_Q = QValue(next_state, next_action, w, bias)
     
+            # Sample 
+            sample = reward + (gamma * next_state_max_Q)
+            diff = QValue(state, action, w, bias) - sample
 
-            sample = reward + (gamma * Qvalue(next_state, next_action, w, bias)) # get best value
-            diff = Qvalue(state, action, w, bias) - sample
-
-
+            # Update weights 
             w[:,action] = w[:,action] - alpha * diff * state
             bias = bias - alpha*diff*1
 
-            if done:
+            # Break if done 
+            if not done:
+                state = next_state
+            else:
                 break 
 
-            state = next_state
         # Print rewards 
         r_out.write(str(total_rewards)+ "\n")
         
     # Print weight outputs 
     w_out.write(str(bias)+'\n')
-    for i in w:
-        for j in i:
-            w_out.write(str(j) + '\n')
+    for row in w:
+        for elem in row:
+            w_out.write(str(elem) + '\n')
 
     # Close
     car.close()
     w_out.close()
     r_out.close()
 
+# Return action based on epsilon greedy 
 def getAction(Q, state, actions, epsilon, w, bias):
     prob = random.random() 
     if (prob < epsilon):
@@ -82,22 +82,21 @@ def getAction(Q, state, actions, epsilon, w, bias):
     else:
         return getBestAction(Q, state, actions, w, bias)                
 
-def Qvalue(state, action, w, bias):
+# Returns Q value 
+def QValue(state, action, w, bias):
     return np.dot(state, w[:,action]) + bias
 
 # Return best action for given state 
 def getBestAction(Q, state, actions, w, bias):
-  #  print("Getting best action")
     bestAction = None
     bestQ= float('-inf')
     # Loop through actions
     for action in actions:
-        # Get Q val of state, action
-        currQ = Qvalue(state, action, w, bias)
+        # Get Q value of state, action
+        currQ = QValue(state, action, w, bias)
         if currQ > bestQ:
             bestAction = action
             bestQ = currQ
-  #  print("Chose action %d" % bestAction)
     return bestAction 
 
 if __name__ == "__main__":

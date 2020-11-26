@@ -11,13 +11,21 @@ def main():
     w_out = open(weight_out, 'w')
     r_out = open(returns_out, 'w')
     # Initialize Mountain Car 
-    car = MountainCar(mode=mode,fixed=1)
+    car = MountainCar(mode=mode)
     actions, num_actions = (0,1,2), 3
-    # Weights: 2 by 3 matrix 
-    Q = {}
-    w = np.zeros((2,num_actions))
+    # Weights: <dim(S)> by <num_actions> matrix 
+    w = np.zeros((car.state_space ,num_actions))
     bias = 0
 
+    # Represent state as numpy array 
+    def state_rep(state_dict, mode):
+        if mode == "raw":
+            state = np.asarray(list(state_dict.values()))
+        elif mode == "tile":
+            state = np.zeros(2048)
+            for key in state_dict:
+                state[key] = 1
+        return state 
 
     # Do actions
     for i in range(episodes):
@@ -27,27 +35,27 @@ def main():
         # Raw dictionary 
         state_dict = car.reset()
         # Convert to numpy array 
-        state = np.asarray(list(state_dict.values()))
-
+        state = state_rep(state_dict, mode)
+    
         while num_iters < max_iterations:   
             num_iters += 1
 
             # E greedy 
-            action = getAction(Q, state, actions, epsilon, w, bias)
+            action = getAction(state, actions, epsilon, w, bias)
             
             # Observe sample 
             (next_state_dict, reward, done) = car.step(action)
-
+            
             # Add current reward 
             total_rewards += reward 
 
-            # Next state
-            next_state = np.asarray(list(next_state_dict.values()))
-            next_action = getBestAction(Q, next_state, actions, w, bias)
-            next_state_max_Q = QValue(next_state, next_action, w, bias)
+            # Next state, get best action for next state 
+            next_state = state_rep(next_state_dict, mode)
+            next_best_action = getBestAction(next_state, actions, w, bias)
+            next_state_best_Q = QValue(next_state, next_best_action, w, bias)
     
             # Sample 
-            sample = reward + (gamma * next_state_max_Q)
+            sample = reward + (gamma * next_state_best_Q)
             diff = QValue(state, action, w, bias) - sample
 
             # Update weights 
@@ -75,19 +83,19 @@ def main():
     r_out.close()
 
 # Return action based on epsilon greedy 
-def getAction(Q, state, actions, epsilon, w, bias):
+def getAction(state, actions, epsilon, w, bias):
     prob = random.random() 
     if (prob < epsilon):
         return random.choice(actions)
     else:
-        return getBestAction(Q, state, actions, w, bias)                
+        return getBestAction(state, actions, w, bias)                
 
 # Returns Q value 
 def QValue(state, action, w, bias):
     return np.dot(state, w[:,action]) + bias
 
 # Return best action for given state 
-def getBestAction(Q, state, actions, w, bias):
+def getBestAction(state, actions, w, bias):
     bestAction = None
     bestQ= float('-inf')
     # Loop through actions

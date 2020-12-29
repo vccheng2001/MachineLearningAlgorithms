@@ -24,8 +24,7 @@ def load_files(label, group, X, y):
     # Load (x, y))
     for file in files:
         # Load each x sample 
-        vec = np.loadtxt(path + file,dtype=np.float64)
-        print(path+file)
+        vec = np.loadtxt(path + file,delimiter=",", dtype=np.float64,usecols=[1])
         X = np.vstack((X,vec))
         # Append output class to y vector 
         label_num = 1 if label == "positive" else 0
@@ -35,14 +34,14 @@ def load_files(label, group, X, y):
 
 def load_dataset():
     # Load Train Data 
-    timesteps = 400
+    timesteps = 800
     group = "train"
     trainy = np.array([],dtype=np.int64)
     trainX = np.array([], dtype=np.float64).reshape(0,timesteps)
     # Load train files 
     for label in output_labels:
         trainX, trainy = load_files(label, group, trainX, trainy)
-    trainy = (np.expand_dims(trainy, axis=1))
+    # trainy = (np.expand_dims(trainy, axis=1))
     trainX = np.expand_dims(trainX, axis=2)
    
     #Load Test data 
@@ -52,14 +51,17 @@ def load_dataset():
     # Load train files 
     for label in output_labels:
         testX, testy = load_files(label, group, testX, testy)
-    testy = (np.expand_dims(testy, axis=1))
+    # testy = (np.expand_dims(testy, axis=1))
     testX = np.expand_dims(testX, axis=2)
+    
+    trainy = to_categorical(trainy)
+    testy = to_categorical(testy)
 
-
-    print("trainy: ", trainy)
-    print("trainX: ", trainX)
-    print("testy: ", testy)
-    print("testX: ", testX)
+    print("trainy: ", trainy.shape)
+    print("trainX: ", trainX.shape)
+    print("testy: ", testy.shape)
+    print("testX: ", testX.shape)
+    
 
     return trainX, trainy, testX, testy 
 

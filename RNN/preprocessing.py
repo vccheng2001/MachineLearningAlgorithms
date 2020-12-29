@@ -5,10 +5,11 @@ import numpy as np
 
 raw_path = "raw/"
 train_path = "train/"
+hello_path = "hello/"
 # Preprocesses apnea files 
 def main():
     raw_path = "raw/"
-    for group in ["positive/"]:
+    for group in ["positive/", "negative/"]:
         read_files(raw_path, group)
     
 def read_files(raw_path, group):
@@ -19,8 +20,13 @@ def read_files(raw_path, group):
         file_name = files[i] 
         file_path = raw_path + group + file_name
         df = pd.read_csv(file_path, sep=",", usecols=[1])
-        df = df.head(3000-1)
-        df.to_csv(train_path + group + "positive_"+str(i)+".txt", index=False)
+        df = df.rolling(10).mean() 
+        df = df.dropna()
+        df = df.iloc[::10, :]
+        df = df.head(400-1)
+        if df.shape[0] < 400-1: continue
+        else:
+            df.to_csv(train_path + group + group[:-1] + "_" + str(i)+".txt", index=False)
      # for file_name in files:
     #     print(raw_path + group + file_name)
     #     file_path = raw_path + group + file_name 

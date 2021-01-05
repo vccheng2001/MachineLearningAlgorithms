@@ -35,7 +35,7 @@ def load_files(label, group, X, y):
 
 def load_dataset():
     # Load Train Data 
-    timesteps = 300
+    timesteps = 100
     group = "train"
     trainy = np.array([],dtype=np.int64)
     trainX = np.array([], dtype=np.float64).reshape(0,timesteps)

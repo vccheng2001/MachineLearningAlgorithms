@@ -19,7 +19,8 @@ def read_files(raw_path, group):
     # Read each file 
     for i in range(len(files)):
         file_name = files[i] 
-        print(file_name)
+        print("Input:" , file_name)
+
 
         # Load format
         file_path = raw_path + group + file_name
@@ -27,12 +28,12 @@ def read_files(raw_path, group):
         out_file = train_path + group + group[:-1] + "_" + str(i)+".txt" 
         np.savetxt(out_file, data, delimiter='\n', fmt='%d')
 
-
+        print("Output: " , out_file)
         # Delete nans, resize 
         df = pd.read_csv(out_file, delimiter='\n')
         df = df.dropna()
-        df = df.head(300)
-        if df.shape[0] < 300: 
+        df = df.tail(100)
+        if df.shape[0] < 100: 
             os.remove(out_file)
         else:
             df.to_csv(out_file,index=False,header=None)

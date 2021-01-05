@@ -24,7 +24,8 @@ def load_files(label, group, X, y):
     # Load (x, y))
     for file in files:
         # Load each x sample 
-        vec = np.loadtxt(path + file,delimiter=",", dtype=np.float64,usecols=[1])
+        print(file)
+        vec = np.loadtxt(path + file,delimiter="\n", dtype=np.float64)
         X = np.vstack((X,vec))
         # Append output class to y vector 
         label_num = 1 if label == "positive" else 0

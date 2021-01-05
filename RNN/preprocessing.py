@@ -22,11 +22,11 @@ def read_files(raw_path, group):
         df = pd.read_csv(file_path, sep=",", names=["time", "value"])
 
         # Processing
-        df['value'] = df['value'].rolling(10).mean() #rolling average every half second 
+        # df['value'] = df['value'].rolling(30).mean() #rolling average every half second 
         df = df.dropna()
-        df = df.iloc[::10, :]
-        df = df.head(800)
-        if df.shape[0] < 800: 
+        df = df.iloc[::20, :]
+        df = df.head(300)
+        if df.shape[0] < 300: 
             continue
         else:
             df.to_csv(train_path + group + group[:-1] + "_" + str(i)+".txt", index=False,header=None)

@@ -93,7 +93,16 @@ def summarize_results(scores):
     print('Accuracy: %.3f%% (+/-%.3f)' % (m, s))
 
 # run an experiment
-def run_experiment(repeats=3):
+def make_predictions():
+    # load data
+    trainX, trainy, testX, testy = load_dataset()
+    # repeat experiment
+    model, batch_size = evaluate_model(trainX, trainy, testX, testy)
+    predictions = model.predict(testX, batch_size, verbose=1)
+    print(predictions)
+
+# run an experiment
+def run_experiment(repeats=1):
     # load data
     trainX, trainy, testX, testy = load_dataset()
     # repeat experiment
@@ -108,4 +117,5 @@ def run_experiment(repeats=3):
     summarize_results(scores)
 
 # run the experiment
-run_experiment()
+# run_experiment()
+make_predictions()

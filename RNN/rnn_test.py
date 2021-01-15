@@ -9,6 +9,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM
 from tensorflow.keras.utils import to_categorical
 
+timesteps = 120
 
 def test():
     batch_size = 64
@@ -19,21 +20,29 @@ def test():
     print(predictions)
 
 
-def load_files_test(label, X):
-    path = "test" + '/' +label + '/'
+def load_files_test( X):
+    path = "test/"
     files = os.listdir(path)
     for file in files:
-        vec = np.loadtxt(path + file,delimiter="\n", dtype=np.float64)
-        X = np.vstack((X,vec))
+        print('Currently processing test file :', file)
+        arr = np.loadtxt(path + file,delimiter="\n", dtype=np.float64)
+        arr = window(arr, timesteps, 1, True)
+        X = np.vstack((X,arr))
     return X
 
+def window(arr, w = timesteps, o = 1, copy = True):
+    sh = (arr.size - w + 1, w)
+    st = arr.strides * 2
+    view = np.lib.stride_tricks.as_strided(arr, strides = st, shape = sh)[0::o]
+    if copy: return view.copy()
+    else: return view
+
 def load_test_dataset():
-    timesteps = 120 
     testX = np.array([], dtype=np.float64).reshape(0,timesteps)
     # Load train files 
-    for label in ["positive", "negative"]:
-        testX = load_files_test(label, testX)
+    testX = load_files_test(testX)
     testX = np.expand_dims(testX, axis=2)
     print("test X ", testX.shape)
     return testX
+
 test()

@@ -58,9 +58,7 @@ def load_dataset():
         testX = load_files_test(label, group, testX)
     
     testX = np.expand_dims(testX, axis=2)
-    print("test X ")
-    print(testX.shape)
-    print(testX)
+    print("test X ", testX.shape)
     trainy = to_categorical(trainy)
 
     return trainX, trainy, testX

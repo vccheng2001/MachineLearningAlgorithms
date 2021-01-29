@@ -3,6 +3,7 @@ from tensorflow import keras
 # lstm model
 import os 
 import numpy as np
+import pandas as pd
 from numpy import mean, std, dstack
 from pandas import read_csv
 from tensorflow.keras.models import Sequential
@@ -10,13 +11,25 @@ from tensorflow.keras.layers import Dense, Dropout, LSTM
 from tensorflow.keras.utils import to_categorical
 
 timesteps = 120
+threshold = 0.9
+batch_size = 64
 
 def test():
-    batch_size = 64
     model = keras.models.load_model('saved_model')
 
     testX = load_test_dataset()
     predictions = model.predict(testX, batch_size, verbose=1)
+    
+    num_rows = predictions.shape[0]
+    flagged_apnea_col = np.zeros((num_rows, 1))
+    for i in range(num_rows):
+        row = predictions[i]
+        if row[1] >= threshold:
+            flagged_apnea_col[i] = 1
+    predictions = np.hstack((predictions, flagged_apnea_col))
+
+    np.savetxt('predictions.txt', predictions, delimiter=' ', fmt='%10f', header="Negative,Positive,Flag Apnea?")
+
     print(predictions)
 
 

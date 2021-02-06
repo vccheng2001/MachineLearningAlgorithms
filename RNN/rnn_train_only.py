@@ -43,7 +43,7 @@ def train_model(trainX, trainy):
     # Binary 0-1 loss, use SGD 
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     # fit network
-    model.fit(trainX, trainy, epochs=epochs, batch_size=batch_size, verbose=verbose)
+    model.fit(trainX, trainy, epochs=epochs, batch_size=batch_size)
     return model
 
 # load train files for positive and negative sequences 

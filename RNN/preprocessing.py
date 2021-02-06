@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import numpy as np
 import csv
+import shutil
 import sys
 
 (program, apnea_type, timesteps) = sys.argv

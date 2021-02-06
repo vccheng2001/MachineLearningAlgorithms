@@ -7,9 +7,9 @@ import shutil
 import sys
 
 (program, apnea_type, timesteps) = sys.argv
-raw_path = "raw_" + apnea_type + '/'
-train_path = "train_" + apnea_type + '/'
-test_path = "test_" + apnea_type + '/'
+raw_path = f"raw_{apnea_type}/"
+train_path = f"train_{apnea_type}/"
+test_path = f"test_{apnea_type}/"
 labels = ["positive/", "negative/"]
 
 # Preprocesses apnea files 
@@ -41,16 +41,17 @@ def setup_train_data(raw_path,label):
         print("Input:" , file_name)
         file_path = raw_path +label + file_name
         # Output file path 
-        out_file = train_path+label+label[:-1] + "_" + str(i)+".txt"  
+        out_file = train_path+label+label[:-1] + "_" + str(i)+".txt"
+
         try:
-            df = pd.read_csv(file_path, header=None, delimiter='\n')
+            df = pd.read_csv(file_path,  header=None, delimiter='\n')
             # only need <timesteps> rows
-            df = df.head(timesteps)
-            if not df.empty and not df.shape[0] < timesteps:
+            df = df.head(int(timesteps))
+            if not df.empty and not df.shape[0] < int(timesteps):
                 print("Output:" , out_file)
-                df.to_csv(out_file,float_format='%.4f')
-        except Exception as e:
-            print(e)
+                df.to_csv(out_file, index=False, header=None,float_format='%.4f')
+        except Exception as err:
+            print(err)
 
 # Clears directory
 def remove_dir(path):

@@ -1,50 +1,32 @@
-# Does train only and saves model into saved_model
-import os 
+'''
+rnn_train_only.py
+
+This program reads the train files into X, y matrices,
+then trains/saves an RNN model to the file trained_<apnea-type>_model.
+'''
+
+import os, sys
 import numpy as np
 from numpy import mean, std, dstack 
-
 from pandas import read_csv
 
+# Keras LSTM model 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM
 from tensorflow.keras.utils import to_categorical
 
+# Graphing 
 from matplotlib import pyplot
 
-# number of timesteps (10 sec before apnea, 5 after)
-# 15 * 8 samples/sec = 120 samples
-timesteps = 160
-apnea_type = "osa"
-train_group = "train_" + apnea_type 
+# parameters
+(program, apnea_type, timesteps) = sys.argv
+labels = {"positive/":1, "negative/":0}
+train_group = f"train_{apnea_type}/"
+epochs, batch_size = 15, 64
 
-def load_files_train(label, X, y):
-    path = train_group + '/' +label + '/'
-    files = os.listdir(path)
-    for file in files:
-        vec = np.loadtxt(path + file,delimiter="\n", dtype=np.float64)
-        X = np.vstack((X,vec))
-        # Append output class to y vector 
-        label_num = 1 if label == "positive" else 0
-        y = np.hstack((y,label_num))
-    return X, y
-
-def load_train_dataset():
-    # Load Train Data 
-    trainy = np.array([],dtype=np.int64)
-    trainX = np.array([], dtype=np.float64).reshape(0,timesteps)
-    # Load train files for both labels
-    for label in ["positive", "negative"]:
-        trainX, trainy = load_files_train(label, trainX, trainy)
-    trainX = np.expand_dims(trainX, axis=2)
-    trainy = to_categorical(trainy)
-    return trainX, trainy
-
-
-# fit and evaluate a model
+# fit and evaluate rnn-lstm model
 def train_model(trainX, trainy):
-    verbose, epochs, batch_size = 0, 15, 64
     n_timesteps, n_features, n_outputs = trainX.shape[1], trainX.shape[2], trainy.shape[1]
-
     # Add one layer at a time 
     model = Sequential()
     # 100 units in output 
@@ -61,10 +43,37 @@ def train_model(trainX, trainy):
     model.fit(trainX, trainy, epochs=epochs, batch_size=batch_size, verbose=verbose)
     return model
 
-def train():
-    # load train data, train 
-    trainX, trainy = load_train_dataset()
-    model = train_model(trainX, trainy)
-    model.save('trained_'+apnea_type+'_model')
+# load train files for positive and negative sequences 
+def load_train_dataset():
+    # Load Train Data 
+    trainy = np.array([],dtype=np.int64)
+    trainX = np.array([], dtype=np.float64).reshape(0,int(timesteps))
+    # Load train files for positive and negative sequences 
+    for label in labels:
+        trainX, trainy = load_files_train(label, trainX, trainy)
+    trainX = np.expand_dims(trainX, axis=2)
+    # convert y into a two-column probability distribution (-, +)
+    trainy = to_categorical(trainy)
+    return trainX, trainy
 
-train()
+# Creates X, y train matrices 
+def load_files_train(label, trainX, trainy):
+    path = train_group+label # e.g. train/positive/
+    files = os.listdir(path)
+    # Load all N train files one sample at a time
+    for file in files:
+        sample= np.loadtxt(path + file,delimiter="\n", dtype=np.float64)
+        trainX = np.vstack((trainX, sample))
+        # Append binary 1 or 0 to y vector 
+        binary_label = labels[label]
+        trainy = np.hstack((trainy,binary_label))
+    return trainX, trainy
+
+def main():
+    trainX, trainy = load_train_dataset()       # Load train data 
+    model = train_model(trainX, trainy)         # Train model 
+    model.save(f'trained_{apnea_type}_model')   # Save model
+
+
+if __name__ == "__main__":
+    main()

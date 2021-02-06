@@ -1,3 +1,12 @@
+'''
+preprocessing.py
+
+This program preprocesses raw files into training data,
+sorted by positive/negative sequences. 
+
+params: <apnea_type>, <timesteps> 
+Example: python3 preprocessing.py osa 160
+'''
 
 import pandas as pd 
 import os

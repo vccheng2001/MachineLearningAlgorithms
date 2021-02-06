@@ -1,73 +1,86 @@
-# after training, load saved model
-# takes in one file, sliding window to make Xtest
-import tensorflow as tf
-from tensorflow import keras
-import os 
+'''
+rnn_test_window.py
+
+After training is done, this program takes an input test file and 
+and runs it against the trained model (trained_<apnea-type>_model).
+Performs a sliding window (window size: <timesteps>) over the test file
+and outputs a prediction file.
+
+Output file: predictions_<apnea_type>_window.txt
+
+params: <apnea_type>
+        <timesteps/window_size> (same by default)
+        <threshold>
+Example: python3 rnn_test_window.py osa 160 0.9
+'''
+
+import os, sys
 import numpy as np
-import pandas as pd
-from numpy import mean, std, dstack
+from numpy import mean, std, dstack 
 from pandas import read_csv
+
+# Keras LSTM model 
+import tensorflow.keras as keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM
 from tensorflow.keras.utils import to_categorical
 
-timesteps = 160
-threshold = 0.9
+# parameters 
+(program, apnea_type, timesteps, threshold) = sys.argv
+print(apnea_type)
+test_path = "test_" + apnea_type + '/'
 batch_size = 64
 
-apnea_type = "osa"
-test_group = "test_" + apnea_type
-def test():
-    model = keras.models.load_model('trained_'+apnea_type+'_model')
-
-    testX, actual = load_test_dataset()
+# Takes input test vector and runs it against trained LSTM model 
+def main():
+    # load saved model 
+    model = keras.models.load_model(f"trained_{apnea_type}_model")
+    # load input test vector 
+    testX = load_test_dataset()
+    # predict using sliding window 
     predictions = model.predict(testX, batch_size, verbose=1)
-    
-    num_rows = predictions.shape[0]
-    flagged_apnea_col = np.zeros((num_rows, 1))
-    for i in range(num_rows):
-        row = predictions[i]
-        if row[1] >= threshold:
-            flagged_apnea_col[i] = 1
-    predictions = np.hstack((predictions, flagged_apnea_col))
-    # predictions = np.hstack((predictions, actual))
-    np.savetxt('predictions_'+apnea_type+'_window.txt', predictions, delimiter=' ', fmt='%10f') #"Negative,Positive,Predict")
+    # number of samples generated using sliding window 
+    num_predictions = predictions.shape[0]
+    # 1 if predict apnea, 0 otherwise 
+    flags = np.zeros((num_predictions, 1))
 
-    print(predictions)
+    for i in range(num_predictions):
+        p = predictions[i]
+        # flag apnea (1) if positive prediction >= threshold, else 0
+        flags[i] = 1 if p[1] >= threshold else 0
+    predictions = np.hstack((predictions, flags))
+    # Save to predictions file 
+    np.savetxt(f'predictions_{apnea_type}_window.txt', predictions, delimiter=" ", fmt='%10f')
 
 
+# create test X matrix 
 def load_files_test(X):
-    path = test_group+'/'
-    files = os.listdir(path)
+    files = os.listdir(test_path)
     for file in files:
-        print('Currently processing test file :', file)
-
-        # Use this for reading all columns of test file 
-        #arr = np.loadtxt(path + file,delimiter="\n", dtype=np.float64)
-        
-        # Use this for only reading first column 
-        arr = np.loadtxt(path + file,delimiter="\t", dtype=np.float64,usecols=[0])
-       
-        # actual = np.loadtxt(path + file,delimiter="\t", dtype=np.float64,usecols=[1])
-        actual = 0
-        arr = window(arr, timesteps, 1, True)
+        print(f'Currently processing test file : {file}')
+        # !! delete <usecols> if only 1 column
+        arr = np.loadtxt(test_path + file,delimiter="\t", dtype=np.float64, usecols=[0])
+        # create sliding window and add to test X 
+        arr = window(arr, int(timesteps), 1, True)
         X = np.vstack((X,arr))
-    # print(X.shape, X)
-    return X, actual
+    print(f'Sliding window X shape: {X.shape}')
+    return X
 
-def window(arr, w = timesteps, o = 1, copy = True):
-    sh = (arr.size - w + 1, w)
+# creates sliding window 
+def window(arr, window_size = int(timesteps), o = 1, copy = True):
+    sh = (arr.size - window_size + 1, window_size)
     st = arr.strides * 2
     view = np.lib.stride_tricks.as_strided(arr, strides = st, shape = sh)[0::o]
     if copy: return view.copy()
     else: return view
 
+# load input test vector as matrix 
 def load_test_dataset():
-    testX = np.array([], dtype=np.float64).reshape(0,timesteps)
-    # Load train files 
-    testX, actual = load_files_test(testX)
+    testX = np.array([], dtype=np.float64).reshape(0,int(timesteps))
+    testX = load_files_test(testX)
     testX = np.expand_dims(testX, axis=2)
-    print("test X ", testX.shape)
-    return testX, actual
+    return testX
 
-test()
+
+if __name__ == "__main__":
+    main()

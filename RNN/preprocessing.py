@@ -3,70 +3,60 @@ import pandas as pd
 import os
 import numpy as np
 import csv
-import shutil
-apnea_type = "osa"
+import sys
 
-
+(program, apnea_type, timesteps) = sys.argv
 raw_path = "raw_" + apnea_type + '/'
 train_path = "train_" + apnea_type + '/'
 test_path = "test_" + apnea_type + '/'
+labels = ["positive/", "negative/"]
 
-timesteps = 160
 # Preprocesses apnea files 
 def main():
+    init_dirs()
+    for label in labels:
+        setup_train_data(raw_path, label)
+    for label in labels:
+        num_files = len(os.listdir(train_path + label))
+        print(f"Number of {label[:-1]}s: {str(num_files)}")
+
+# Sets up directories for train, test data 
+def init_dirs():
     remove_dir(train_path)
     remove_dir(test_path)
     make_dir(train_path)
     make_dir(test_path)
-    for group in ['positive/', 'negative/']:
-        make_dir(train_path+group)
-        make_dir(test_path+group)
-    for group in ["positive/", "negative/"]:
-        read_files(raw_path, group)
-    # for group in ["positive/", "negative/"]: 
-    #     num_files = len(os.listdir(train_path + group))
-    #     print("Number of " + group[:-1] + "s: " + str(num_files))
+    for label in labels:
+        make_dir(train_path+label)
+        # make_dir(test_path+label) # Not needed if sliding window
 
-
-def read_files(raw_path, group):
-    # List all files in group 
-    files = os.listdir(raw_path + group)
+# Preprocesses raw data into train data
+def setup_train_data(raw_path,label):
+    files = os.listdir(raw_path +label)
     # Read each file 
     for i in range(len(files)):
         file_name = files[i]
+        # Input raw file
         print("Input:" , file_name)
-        # Load format
-        file_path = raw_path + group + file_name
-        out_file = train_path + group + group[:-1] + "_" + str(i)+".txt"  
+        file_path = raw_path +label + file_name
+        # Output file path 
+        out_file = train_path+label+label[:-1] + "_" + str(i)+".txt"  
         try:
-            data = np.genfromtxt(file_path, delimiter="\n",dtype=None)
-            np.savetxt(out_file, data, delimiter='\n', fmt='%.4f ')
-            print("Output: " , out_file)
-            # Delete nans, resize 
-            df = pd.read_csv(out_file, delimiter='\n',names=["value"])
-            # Method 1: Rescale between range (predicts many false positives)
-            # a, b = 0, 1000
-            # x, y = df["value"].min(), df["value"].max()
-            # df["value"] = (df["value"] - x) / (y - x) * (b - a) + a
-
-            # Method 2: normalize (not accurate )
-            # df=(df-df.mean())/df.std()
-
-            # Method 3: Rolling window (predicts all 0s) 
-            # df.rolling(window=2).mean()
+            df = pd.read_csv(file_path, header=None, delimiter='\n')
+            # only need <timesteps> rows
             df = df.head(timesteps)
-            if df.empty or df.shape[0] < timesteps:
-                os.remove(out_file)
-            else:
-                df.to_csv(out_file,index=False,header=None)
+            if not df.empty and not df.shape[0] < timesteps:
+                print("Output:" , out_file)
+                df.to_csv(out_file,float_format='%.4f')
         except Exception as e:
-            os.remove(out_file)
             print(e)
-        
+
+# Clears directory
 def remove_dir(path):
     if os.path.isdir(path):
         shutil.rmtree(path)
 
+# Makes directory 
 def make_dir(path):
     if not os.path.isdir(path):
         print("Making dir.... " + path)

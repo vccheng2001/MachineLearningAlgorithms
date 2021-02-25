@@ -135,8 +135,13 @@ class SoftmaxCrossEntropy(Criterion):
         # you can add variables if needed
 
     def forward(self, y_hat, y):
+
         self.y, self.y_hat = y, y_hat
-        N = self.y_hat.shape[0]
+        N = self.y.shape[0]
+        print('actual b4', self.y)
+        self.y = self.y.argmax(axis=1)
+        print('actual', self.y)
+
         log_likelihood = -np.log(self.y_hat[range(N), self.y])
         self.loss = np.sum(log_likelihood) / N
         return self.loss
@@ -168,8 +173,8 @@ class MLP(object):
 
         self.num_hiddens = len(hiddens)
         # pre/post activation, hidden/output
-        self.pre_h = np.zeros(self.num_hiddens)
-        self.post_h = np.zeros(self.num_hiddens)
+        self.pre_h = [0]*self.num_hiddens
+        self.post_h = [0]*self.num_hiddens
         self.pre_o, self.post_o = 0, 0
 
         # Don't change this -->
@@ -197,18 +202,24 @@ class MLP(object):
 
     def forward(self, x):
         # hidden node: 784 -> 128
+        print("input")
         for i in range(self.num_hiddens):
             # linear
+            print('x: ', x.shape)
+            print('W:', self.W[i].shape)
             self.pre_h[i] = np.dot(x, self.W[i])
             # activation function
             self.post_h[i] = self.activations[i].forward(self.pre_h[i])
+            print("Post", self.post_h[i].shape)
         # output layer: 128 -> 10
         # -1 should be nlayers - 1
         self.pre_o = np.dot(self.post_h[-1], self.W[-1])
-        self.post_o = softmax(self.pre_o, axis=0)
+        print("before softmax:", self.pre_o)
 
-        self.loss = self.criterion.forward(self.post_o)
-        
+        self.post_o = softmax(self.pre_o, axis=0)
+        print(np.sum(self.post_o, axis=0))
+
+        print('after softmax', self.post_o.shape, self.post_o)
 
     def zero_grads(self):
         # set dW and db to be zero
@@ -224,7 +235,7 @@ class MLP(object):
     def backward(self, labels):
         if self.train_mode:
             # calculate dW and db only under training mode
-            pass
+            self.loss = self.criterion.forward(self.post_o, labels)
         return
 
     def __call__(self, x):
@@ -240,7 +251,7 @@ class MLP(object):
 
     def get_loss(self, labels):
         # return the current loss value given labels
-        return NotImplementedError
+        return self.loss
 
     def get_error(self, labels):
         # return the number of incorrect preidctions gievn labels

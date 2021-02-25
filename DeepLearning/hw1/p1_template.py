@@ -54,11 +54,13 @@ class Sigmoid(Activation):
         super(Sigmoid, self).__init__()
 
     def forward(self, x):
-        self.fwd = 1 / (1 + np.exp(-x))
-        return self.fwd
+        # sigmoid
+        self.saved = 1/(1+np.exp(-x))
+        return self.saved
 
-    def derivative(self):
-        pass
+    def derivative(self, x):
+        # deriv of sigmoid
+        return self.saved(x) * (1-self.saved(x))
 
 
 class Tanh(Activation):
@@ -71,11 +73,13 @@ class Tanh(Activation):
         super(Tanh, self).__init__()
 
     def forward(self, x):
-        self.fwd = (2/(1+np.exp(-2*x))) - 1
-        return self.fwd
+        # tanh(x)
+        self.saved = (2/(1+np.exp(-2*x))) - 1
+        return self.saved 
 
-    def derivative(self):
-        pass
+    def derivative(self, x):
+        # 1 - (tanh(x))^2
+        return 1-(self.saved**2)
 
 
 class ReLU(Activation):
@@ -88,11 +92,11 @@ class ReLU(Activation):
         super(ReLU, self).__init__()
 
     def forward(self, x):
-        self.fwd = max(0,x)
-        return self.fwd
+        self.saved = max(0,x)
+        return self.saved
 
-    def derivative(self):
-        pass
+    def derivative(self, x):
+        return x * (self.saved >= 0)
 
 
 class Criterion(object):
@@ -129,8 +133,9 @@ class SoftmaxCrossEntropy(Criterion):
         # you can add variables if needed
 
     def forward(self, y_hat, y):
-        for i in range(y_hat.shape[0]):
-            y_hat[i] = np.exp(y_hat[i]) / np.sum(np.exp(y_hat[i]))
+        # for i in range(y_hat.shape[0]):
+        #     y_hat[i] = np.exp(y_hat[i]) / np.sum(np.exp(y_hat[i]))
+        # -sum(y*log(y_hat))
         self.loss = -1 * np.sum(np.multiply(y, np.log(y_hat)))
         return self.loss
 
@@ -195,7 +200,7 @@ class MLP(object):
         for i in range(self.nlayers):
             self.W[i] = self.W[i] - self.lr * self.dW[i]
             self.b[i] = self.b[i] - self.lr * self.db[i]
-            
+
     def backward(self, labels):
         if self.train_mode:
             # calculate dW and db only under training mode
@@ -251,7 +256,7 @@ def get_training_stats(mlp, dset, nepochs, batch_size):
 
         for b in range(0, num_train, batch_size):
             mlp.train()
-            mlp(trainx[b:b+batch_size])
+            mlp.forward(trainx[b:b+batch_size])
             mlp.backward(trainy[b:b+batch_size])
             mlp.step()
             train_loss += mlp.get_loss(trainy[b:b+batch_size])
@@ -302,8 +307,8 @@ def main():
     image_size = 28 # width and length of mnist image
     num_labels = 10 #  i.e. 0, 1, 2, 3, ..., 9
     image_pixels = image_size * image_size
-    train_data = np.loadtxt("mnist_train.csv", delimiter=",")
-    test_data = np.loadtxt("mnist_test.csv", delimiter=",") 
+    train_data = np.loadtxt("../mnist/mnist_train.csv", delimiter=",")
+    test_data = np.loadtxt("../mnist/mnist_test.csv", delimiter=",") 
 
     # rescale image from 0-255 to 0-1
     fac = 1.0 / 255
@@ -335,10 +340,10 @@ def main():
     # These are only examples of parameters you can start with
     # you can tune these parameters to improve the performance of your MLP
     # this is the only part you need to change in main() function
-    hiddens = [128, 64]
+    hiddens = [128]
     activations = [Sigmoid(), Sigmoid(), Sigmoid()]
     lr = 0.05
-    num_epochs = 100
+    num_epochs = 10
     batch_size = 8
 
     # build your MLP model

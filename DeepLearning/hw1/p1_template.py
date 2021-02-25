@@ -99,14 +99,6 @@ class ReLU(Activation):
     def derivative(self):
         return self.saved * (self.saved >= 0)
 
-class Softmax(Activation):
-    def forward(self, x):
-        self.saved = softmax(x, axis=1)
-        return self.saved
-
-    def derivative(self):
-        s = self.saved.reshape(-1,1)
-        return np.diagflat(s) - np.dot(s, s.T)
 
 class Criterion(object):
 
@@ -143,19 +135,31 @@ class SoftmaxCrossEntropy(Criterion):
         self.y, self.y_hat = None, None
         # you can add variables if needed
 
-    def forward(self, y_hat, y):
-
+    def forward(self, x, y):
+        print("Doing CE loss")
         N = y.shape[0]
-        self.y_hat = y_hat  # saved 
-        self.y = y          # saved
+
+        self.y_hat = softmax(x, axis=1) # after softmax 
+        self.y = y
+
+        print("softmaxed y_hat", self.y_hat.shape)
+        print("actual y\n", self.y.shape)
+        # for row in self.y_hat:
+        #     print(np.sum(row))
+        print(self.y_hat)
+        print(self.y)
+
         y_idx = self.y.argmax(axis=1)
 
+        # print("selected", self.y_hat[range(N), y_idx]) # selects y_hats corresp to actual y
         log_likelihood = -np.log(self.y_hat[range(N), y_idx])
         self.loss = np.sum(log_likelihood) / N
         print(f'loss over {N} samples: {self.loss}')
         return self.loss
 
     def derivative(self):
+        # softmax(linear out) - actual
+        print("ce deriv", self.y_hat.shape, self.y.shape)
         return self.y_hat - self.y
 
 
@@ -201,6 +205,10 @@ class MLP(object):
         self.nn_dim = [input_size] + hiddens + [output_size]
         # list containing Weight matrices of each layer, each should be a np.array
         self.W = [weight_init_fn(self.nn_dim[i], self.nn_dim[i+1]) for i in range(self.nlayers)]
+
+        for i in range(len(self.W)):
+            print(f"W_{i} is {self.W[i].shape}")
+        
         # list containing derivative of Weight matrices of each layer, each should be a np.array
         self.dW = [np.zeros_like(weight) for weight in self.W]
         # list containing bias vector of each layer, each should be a np.array
@@ -225,12 +233,10 @@ class MLP(object):
         # -1 should be nlayers - 1
         self.pre_o = np.dot(self.post_h[-1], self.W[-1])
         # print("before softmax:", self.pre_o)
-
-        self.softmax = Softmax()
-        self.post_o = self.softmax.forward(self.pre_o)
+        # self.post_o = self.activations[-1].forward(self.pre_o)
 
         # self.post_o = softmax(self.pre_o, axis=1)
-        print('pred after softmax', self.post_o.shape, self.post_o)
+        print('linear before softmax', self.pre_o.shape)
 
     def zero_grads(self):
         # set dW and db to be zero
@@ -244,17 +250,22 @@ class MLP(object):
             self.b[i] = self.b[i] - self.lr * self.db[i]
 
     def backward(self, labels):
-        self.loss = self.criterion.forward(self.post_o, labels)
+        self.loss = self.criterion.forward(self.pre_o, labels)
         if self.train_mode:
             for h in range(self.num_hiddens):
                 # calculate dW and db only under training mode
-                err = self.criterion.derivative() * self.softmax.derivative() * self.activations[h].derivative()
-                self.dW[h] = err * self.post_h[h]
-                self.db[h] = err * self.post_h[h]
+                sftmax_deriv = self.criterion.derivative()
+                # print(sftmax_deriv.shape)
+                # print(self.post_h[h].shape)
+                #calculate gradient 
+                self.dW[h] = sftmax_deriv.T @ self.post_h[h]
+                print(self.dW[h].shape)
+                self.db[h] = sftmax_deriv
                 for i in range(1):
                     x = self.activations[i].input
-                    self.dW[i] = err * self.W[i] * self.activations[i].derivative() * x
-                    self.db[i] = err * self.W[i] * self.activations[i].derivative() 
+                    print('x', x.shape)
+                    self.dW[i] = sftmax_deriv @ self.W[i] @ self.activations[i].derivative() @ x
+                    self.db[i] = sftmax_deriv @ self.W[i] @ self.activations[i].derivative() 
             
 
     def __call__(self, x):
@@ -396,7 +407,7 @@ def main():
     # you can tune these parameters to improve the performance of your MLP
     # this is the only part you need to change in main() function
     hiddens = [128]
-    activations = [Sigmoid(), Sigmoid(), Sigmoid()]
+    activations = [Sigmoid()]
     lr = 0.05
     num_epochs = 10
     batch_size = 8

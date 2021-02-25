@@ -54,8 +54,8 @@ class Sigmoid(Activation):
         super(Sigmoid, self).__init__()
 
     def forward(self, x):
-        # hint: save the useful data for back propagation
-        pass
+        self.fwd = 1 / (1 + np.exp(-x))
+        return self.fwd
 
     def derivative(self):
         pass
@@ -71,7 +71,8 @@ class Tanh(Activation):
         super(Tanh, self).__init__()
 
     def forward(self, x):
-        pass
+        self.fwd = (2/(1+np.exp(-2*x))) - 1
+        return self.fwd
 
     def derivative(self):
         pass
@@ -87,7 +88,8 @@ class ReLU(Activation):
         super(ReLU, self).__init__()
 
     def forward(self, x):
-        pass
+        self.fwd = max(0,x)
+        return self.fwd
 
     def derivative(self):
         pass
@@ -126,8 +128,11 @@ class SoftmaxCrossEntropy(Criterion):
         super(SoftmaxCrossEntropy, self).__init__()
         # you can add variables if needed
 
-    def forward(self, x, y):
-        pass
+    def forward(self, y_hat, y):
+        for i in range(y_hat.shape[0]):
+            y_hat[i] = np.exp(y_hat[i]) / np.sum(np.exp(y_hat[i]))
+        self.loss = -1 * np.sum(np.multiply(y, np.log(y_hat)))
+        return self.loss
 
     def derivative(self):
         pass
@@ -135,12 +140,14 @@ class SoftmaxCrossEntropy(Criterion):
 
 # randomly intialize the weight matrix with dimension d0 x d1 via Normal distribution
 def random_normal_weight_init(d0, d1):
-    return NotImplementedError
+    W = np.random.normal(size=(d0,d1))
+    return W
 
 
 # initialize a d-dimensional bias vector with all zeros
 def zeros_bias_init(d):
-    return NotImplementedError
+    b = np.zeros((1,d))
+    return b
 
 
 class MLP(object):
@@ -180,12 +187,15 @@ class MLP(object):
 
     def zero_grads(self):
         # set dW and db to be zero
-        return NotImplementedError
+        self.dW = [np.zeros_like(weight) for weight in self.W]
+        self.db = [np.zeros_like(bias) for bias in self.b]
 
     def step(self):     
         # update the W and b on each layer
-        return NotImplementedError
-
+        for i in range(self.nlayers):
+            self.W[i] = self.W[i] - self.lr * self.dW[i]
+            self.b[i] = self.b[i] - self.lr * self.db[i]
+            
     def backward(self, labels):
         if self.train_mode:
             # calculate dW and db only under training mode

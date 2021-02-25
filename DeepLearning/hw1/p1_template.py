@@ -55,12 +55,13 @@ class Sigmoid(Activation):
 
     def forward(self, x):
         # sigmoid
+        self.input = x
         self.saved = 1/(1+np.exp(-x))
         return self.saved
 
-    def derivative(self, x):
+    def derivative(self):
         # deriv of sigmoid
-        return self.saved(x) * (1-self.saved(x))
+        return self.saved * (1-self.saved)
 
 
 class Tanh(Activation):
@@ -77,7 +78,7 @@ class Tanh(Activation):
         self.saved = (2/(1+np.exp(-2*x))) - 1
         return self.saved 
 
-    def derivative(self, x):
+    def derivative(self):
         # 1 - (tanh(x))^2
         return 1-(self.saved**2)
 
@@ -95,9 +96,17 @@ class ReLU(Activation):
         self.saved = max(0,x)
         return self.saved
 
-    def derivative(self, x):
-        return x * (self.saved >= 0)
+    def derivative(self):
+        return self.saved * (self.saved >= 0)
 
+class Softmax(Activation):
+    def forward(self, x):
+        self.saved = softmax(x, axis=1)
+        return self.saved
+
+    def derivative(self):
+        s = self.saved.reshape(-1,1)
+        return np.diagflat(s) - np.dot(s, s.T)
 
 class Criterion(object):
 
@@ -136,14 +145,14 @@ class SoftmaxCrossEntropy(Criterion):
 
     def forward(self, y_hat, y):
 
-        self.y, self.y_hat = y, y_hat
-        N = self.y.shape[0]
-        print('actual b4', self.y)
-        self.y = self.y.argmax(axis=1)
-        print('actual', self.y)
+        N = y.shape[0]
+        self.y_hat = y_hat  # saved 
+        self.y = y          # saved
+        y_idx = self.y.argmax(axis=1)
 
-        log_likelihood = -np.log(self.y_hat[range(N), self.y])
+        log_likelihood = -np.log(self.y_hat[range(N), y_idx])
         self.loss = np.sum(log_likelihood) / N
+        print(f'loss over {N} samples: {self.loss}')
         return self.loss
 
     def derivative(self):
@@ -176,6 +185,7 @@ class MLP(object):
         self.pre_h = [0]*self.num_hiddens
         self.post_h = [0]*self.num_hiddens
         self.pre_o, self.post_o = 0, 0
+        self.softmax = None
 
         # Don't change this -->
         self.train_mode = True
@@ -202,24 +212,25 @@ class MLP(object):
 
     def forward(self, x):
         # hidden node: 784 -> 128
-        print("input")
+        # print("input")
         for i in range(self.num_hiddens):
             # linear
-            print('x: ', x.shape)
-            print('W:', self.W[i].shape)
+            # print('x: ', x.shape)
+            # print('W:', self.W[i].shape)
             self.pre_h[i] = np.dot(x, self.W[i])
             # activation function
             self.post_h[i] = self.activations[i].forward(self.pre_h[i])
-            print("Post", self.post_h[i].shape)
+            # print("Post", self.post_h[i].shape)
         # output layer: 128 -> 10
         # -1 should be nlayers - 1
         self.pre_o = np.dot(self.post_h[-1], self.W[-1])
-        print("before softmax:", self.pre_o)
+        # print("before softmax:", self.pre_o)
 
-        self.post_o = softmax(self.pre_o, axis=0)
-        print(np.sum(self.post_o, axis=0))
+        self.softmax = Softmax()
+        self.post_o = self.softmax.forward(self.pre_o)
 
-        print('after softmax', self.post_o.shape, self.post_o)
+        # self.post_o = softmax(self.pre_o, axis=1)
+        print('pred after softmax', self.post_o.shape, self.post_o)
 
     def zero_grads(self):
         # set dW and db to be zero
@@ -233,10 +244,18 @@ class MLP(object):
             self.b[i] = self.b[i] - self.lr * self.db[i]
 
     def backward(self, labels):
+        self.loss = self.criterion.forward(self.post_o, labels)
         if self.train_mode:
-            # calculate dW and db only under training mode
-            self.loss = self.criterion.forward(self.post_o, labels)
-        return
+            for h in range(self.num_hiddens):
+                # calculate dW and db only under training mode
+                err = self.criterion.derivative() * self.softmax.derivative() * self.activations[h].derivative()
+                self.dW[h] = err * self.post_h[h]
+                self.db[h] = err * self.post_h[h]
+                for i in range(1):
+                    x = self.activations[i].input
+                    self.dW[i] = err * self.W[i] * self.activations[i].derivative() * x
+                    self.db[i] = err * self.W[i] * self.activations[i].derivative() 
+            
 
     def __call__(self, x):
         return self.forward(x)
@@ -338,8 +357,13 @@ def main():
     image_size = 28 # width and length of mnist image
     num_labels = 10 #  i.e. 0, 1, 2, 3, ..., 9
     image_pixels = image_size * image_size
-    train_data = np.loadtxt("../mnist/mnist_train.csv", delimiter=",")
-    test_data = np.loadtxt("../mnist/mnist_test.csv", delimiter=",") 
+    # train_data = np.loadtxt("../mnist/mnist_train.csv", delimiter=",")
+    # test_data = np.loadtxt("../mnist/mnist_test.csv", delimiter=",") 
+    # np.savez_compressed("../mnist/compressed.npz",train=train_data,test=test_data)
+
+    npz_file = np.load("../mnist/compressed.npz")
+    train_data = npz_file['train']
+    test_data = npz_file['test']
 
     # rescale image from 0-255 to 0-1
     fac = 1.0 / 255

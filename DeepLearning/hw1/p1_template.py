@@ -2,7 +2,7 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-
+from scipy.special import softmax
 
 class Activation(object):
 
@@ -130,17 +130,19 @@ class SoftmaxCrossEntropy(Criterion):
 
     def __init__(self):
         super(SoftmaxCrossEntropy, self).__init__()
+        self.loss = None
+        self.y, self.y_hat = None, None
         # you can add variables if needed
 
     def forward(self, y_hat, y):
-        # for i in range(y_hat.shape[0]):
-        #     y_hat[i] = np.exp(y_hat[i]) / np.sum(np.exp(y_hat[i]))
-        # -sum(y*log(y_hat))
-        self.loss = -1 * np.sum(np.multiply(y, np.log(y_hat)))
+        self.y, self.y_hat = y, y_hat
+        N = self.y_hat.shape[0]
+        log_likelihood = -np.log(self.y_hat[range(N), self.y])
+        self.loss = np.sum(log_likelihood) / N
         return self.loss
 
     def derivative(self):
-        pass
+        return self.y_hat - self.y
 
 
 # randomly intialize the weight matrix with dimension d0 x d1 via Normal distribution
@@ -164,9 +166,15 @@ class MLP(object):
 
     def __init__(self, input_size, output_size, hiddens, activations, weight_init_fn, bias_init_fn, criterion, lr):
 
+        self.num_hiddens = len(hiddens)
+        # pre/post activation, hidden/output
+        self.pre_h = np.zeros(self.num_hiddens)
+        self.post_h = np.zeros(self.num_hiddens)
+        self.pre_o, self.post_o = 0, 0
+
         # Don't change this -->
         self.train_mode = True
-        self.nlayers = len(hiddens) + 1
+        self.nlayers = self.num_hiddens + 1
         self.input_size = input_size
         self.output_size = output_size
         self.activations = activations
@@ -188,7 +196,19 @@ class MLP(object):
         # You can add more variables if needed
 
     def forward(self, x):
-        return NotImplementedError
+        # hidden node: 784 -> 128
+        for i in range(self.num_hiddens):
+            # linear
+            self.pre_h[i] = np.dot(x, self.W[i])
+            # activation function
+            self.post_h[i] = self.activations[i].forward(self.pre_h[i])
+        # output layer: 128 -> 10
+        # -1 should be nlayers - 1
+        self.pre_o = np.dot(self.post_h[-1], self.W[-1])
+        self.post_o = softmax(self.pre_o, axis=0)
+
+        self.loss = self.criterion.forward(self.post_o)
+        
 
     def zero_grads(self):
         # set dW and db to be zero

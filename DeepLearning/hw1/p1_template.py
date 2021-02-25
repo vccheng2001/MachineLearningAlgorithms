@@ -53,10 +53,12 @@ class Sigmoid(Activation):
     def __init__(self):
         super(Sigmoid, self).__init__()
 
-    def forward(self, x):
+    def forward(self, x, linear):
         # sigmoid
-        self.input = x
-        self.saved = 1/(1+np.exp(-x))
+        self.x = x
+        self.linear = linear
+        print('sig input x shape', self.x.shape)
+        self.saved = 1/(1+np.exp(-self.linear))
         return self.saved
 
     def derivative(self):
@@ -144,10 +146,6 @@ class SoftmaxCrossEntropy(Criterion):
 
         print("softmaxed y_hat", self.y_hat.shape)
         print("actual y\n", self.y.shape)
-        # for row in self.y_hat:
-        #     print(np.sum(row))
-        print(self.y_hat)
-        print(self.y)
 
         y_idx = self.y.argmax(axis=1)
 
@@ -227,7 +225,7 @@ class MLP(object):
             # print('W:', self.W[i].shape)
             self.pre_h[i] = np.dot(x, self.W[i])
             # activation function
-            self.post_h[i] = self.activations[i].forward(self.pre_h[i])
+            self.post_h[i] = self.activations[i].forward(x, self.pre_h[i])
             # print("Post", self.post_h[i].shape)
         # output layer: 128 -> 10
         # -1 should be nlayers - 1
@@ -245,6 +243,7 @@ class MLP(object):
 
     def step(self):     
         # update the W and b on each layer
+        print(self.W[0].shape, self.dW[0].shape)
         for i in range(self.nlayers):
             self.W[i] = self.W[i] - self.lr * self.dW[i]
             self.b[i] = self.b[i] - self.lr * self.db[i]
@@ -252,20 +251,24 @@ class MLP(object):
     def backward(self, labels):
         self.loss = self.criterion.forward(self.pre_o, labels)
         if self.train_mode:
-            for h in range(self.num_hiddens):
-                # calculate dW and db only under training mode
-                sftmax_deriv = self.criterion.derivative()
-                # print(sftmax_deriv.shape)
-                # print(self.post_h[h].shape)
-                #calculate gradient 
-                self.dW[h] = sftmax_deriv.T @ self.post_h[h]
-                print(self.dW[h].shape)
-                self.db[h] = sftmax_deriv
-                for i in range(1):
-                    x = self.activations[i].input
-                    print('x', x.shape)
-                    self.dW[i] = sftmax_deriv @ self.W[i] @ self.activations[i].derivative() @ x
-                    self.db[i] = sftmax_deriv @ self.W[i] @ self.activations[i].derivative() 
+            # calculate dW and db only under training mode
+            sftmax_deriv = self.criterion.derivative()
+            
+            # W1, b1
+            self.dW[1] = sftmax_deriv.T @ self.post_h[0]
+            print(self.dW[1].shape)
+            self.db[1] = sftmax_deriv
+
+            #W0, b0
+            x = self.activations[0].x
+            print('layer 0')
+            print(sftmax_deriv.shape)
+            print(self.W[1].shape)
+            print(self.activations[0].derivative().shape)
+            print(x.shape)
+            self.dW[0] = sftmax_deriv @ self.W[1].T @ self.activations[0].derivative().T @ x
+            self.db[0] = sftmax_deriv @ self.W[1].T @ self.activations[0].derivative().T 
+             
             
 
     def __call__(self, x):

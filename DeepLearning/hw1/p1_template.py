@@ -207,11 +207,17 @@ class MLP(object):
     def forward(self, x):
 
         # -- linear, f1 = x * W0 + b0
+        print(x.shape)
+        print(self.W[0].shape)
+        print(self.b[0].shape,'\n')
         self.f1 = np.dot(x, self.W[0]) + self.b[0]
         # -- sigmoid, a = sigmoid(f1)
         self.a = self.activations[0].forward(x, self.f1)
 
         # -- linear, f2 = a * W1 + b1
+        print(self.a.shape)
+        print(self.W[1].shape)
+        print(self.b[1].shape)
         self.f2 = np.dot(self.a, self.W[1]) + self.b[1]
         # -- softmax, o = Softmax(f2)
         self.o = np.exp(self.f2) / np.sum(np.exp(self.f2), axis=1)
@@ -225,7 +231,7 @@ class MLP(object):
         # update the W and b on each layer
         for i in range(self.nlayers):
             self.W[i] = self.W[i] - self.lr * self.dW[i].T
-            self.b[i] = self.b[i] - self.lr * self.db[i].T
+            self.b[i] = self.b[i] - self.lr * self.db[i]
         
 
     def backward(self, labels):
@@ -234,20 +240,15 @@ class MLP(object):
         if self.train_mode:
             # calculate dW and db only under training mode
             df2 = self.db[1] =  self.criterion.derivative() # deriv of softmax
-            print(f"df2 shape: {df2.shape}")
-            print(f"W1 shape: {self.W[1].shape}")
-            print(f"a shape: {self.a.shape}")
-
             da               =  df2 @ self.W[1].T
-            print(f"da shape: {da.shape}")
-
             self.dW[1]       =  df2.T @ self.a
-
             df1 = self.db[0] =  da * self.activations[0].derivative()
-            x = self.activations[0].x
-            print(f"df1 shape: {df1.shape}")
-            print(f"x shape: {x.shape}")
-            self.dW[0] =  df1.T @ x
+            self.dW[0]       =  df1.T @ self.activations[0].x
+            print(f"dW[1]: {self.dW[1].shape}")
+            print(f"db[1]: {self.db[1].shape}")
+            
+            print(f"dW[0]: {self.dW[0].shape}")
+            print(f"dW[0]: {self.db[0].shape}")
 
 
     def __call__(self, x):
@@ -267,7 +268,14 @@ class MLP(object):
 
     def get_error(self, labels):
         # return the number of incorrect preidctions gievn labels
-        return NotImplementedError
+        count = 0
+        o_idx = self.o.argmax(axis=1)
+        y_idx = labels.argmax(axis=1)
+        print(f"y_pred: {o_idx}, y_actual: {y_idx}")
+        for i in range(len(o_idx)):
+            if o_idx[i] != y_idx[i]:
+                count += 1
+        return count
 
     def save_model(self, path='p1_model.npz'):
         # save the parameters of MLP (do not change)

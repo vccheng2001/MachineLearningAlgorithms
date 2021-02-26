@@ -3,6 +3,8 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import pdb
+import faulthandler;
+faulthandler.enable()
 class Activation(object):
 
     """
@@ -143,7 +145,7 @@ class SoftmaxCrossEntropy(Criterion):
         y_idx = self.y.argmax(axis=1)
 
         ll = -np.log(self.o[range(n), y_idx])
-        self.loss = 1/n * np.sum(ll)
+        self.loss = np.sum(ll)
         return self.loss
 
     def derivative(self):
@@ -195,14 +197,21 @@ class MLP(object):
         # Don't change the name of the following class attributes
         self.nn_dim = [input_size] + hiddens + [output_size]
         # list containing Weight matrices of each layer, each should be a np.array
-        self.W = [weight_init_fn(self.nn_dim[i], self.nn_dim[i+1]) for i in range(self.nlayers)]
-
+        # self.W = [weight_init_fn(self.nn_dim[i], self.nn_dim[i+1]) for i in range(self.nlayers)]
+        self.W = np.array([0,0], dtype=object)
+        for i in range(self.nlayers):
+            self.W[i] = weight_init_fn(self.nn_dim[i], self.nn_dim[i+1])
+        # self.W = np.asarray([weight_init_fn(self.nn_dim[i], self.nn_dim[i+1]) for i in range(self.nlayers)], dtype=object)
         # list containing derivative of Weight matrices of each layer, each should be a np.array
         self.dW = [np.zeros_like(weight) for weight in self.W]
 
         # list containing bias vector of each layer, each should be a np.array
-        self.b = [bias_init_fn(self.nn_dim[i+1]) for i in range(self.nlayers)]
+        # self.b = [bias_init_fn(self.nn_dim[i+1]) for i in range(self.nlayers)]
+        # self.b = np.asarray([bias_init_fn(self.nn_dim[i+1]) for i in range(self.nlayers)],dtype=object)
         # list containing derivative of bias vector of each layer, each should be a np.array
+        self.b = np.array([0,0], dtype=object)
+        for i in range(self.nlayers):
+            self.b[i] = bias_init_fn(self.nn_dim[i+1])
         self.db = [np.zeros_like(bias) for bias in self.b]
 
     # input x: batch_size * 784
@@ -403,8 +412,8 @@ def main():
     # this is the only part you need to change in main() function
     hiddens = [128]
     activations = [Sigmoid()]
-    lr = 0.05
-    num_epochs = 1
+    lr = 0.03
+    num_epochs = 3
     batch_size = 8
 
     # build your MLP model
@@ -420,6 +429,7 @@ def main():
     )
 
     # train the neural network
+
     losses = get_training_stats(mlp, dataset, num_epochs, batch_size)
 
     # save the parameters
@@ -429,6 +439,7 @@ def main():
     training_losses, training_errors, validation_losses, validation_errors = losses
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
+    
 
     ax1.plot(training_losses, color='blue', label="training")
     ax1.plot(validation_losses, color='red', label='validation')

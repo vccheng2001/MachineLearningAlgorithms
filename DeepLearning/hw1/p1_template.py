@@ -2,7 +2,7 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-
+import pdb
 class Activation(object):
 
     """
@@ -197,11 +197,9 @@ class MLP(object):
         # list containing Weight matrices of each layer, each should be a np.array
         self.W = [weight_init_fn(self.nn_dim[i], self.nn_dim[i+1]) for i in range(self.nlayers)]
 
-        # for i in range(len(self.W)):
-        #     # print(f"W_{i} is {self.W[i].shape}")
-        
         # list containing derivative of Weight matrices of each layer, each should be a np.array
         self.dW = [np.zeros_like(weight) for weight in self.W]
+
         # list containing bias vector of each layer, each should be a np.array
         self.b = [bias_init_fn(self.nn_dim[i+1]) for i in range(self.nlayers)]
         # list containing derivative of bias vector of each layer, each should be a np.array
@@ -285,6 +283,7 @@ class MLP(object):
 
     def save_model(self, path='p1_model.npz'):
         # save the parameters of MLP (do not change)
+
         np.savez(path, self.W, self.b)
 
 
@@ -405,7 +404,7 @@ def main():
     hiddens = [128]
     activations = [Sigmoid()]
     lr = 0.05
-    num_epochs = 10
+    num_epochs = 1
     batch_size = 8
 
     # build your MLP model

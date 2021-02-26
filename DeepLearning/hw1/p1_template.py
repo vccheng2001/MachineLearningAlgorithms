@@ -57,7 +57,6 @@ class Sigmoid(Activation):
         # sigmoid
         self.x = x
         self.linear = linear
-        print('sig input x shape', self.x.shape)
         self.saved = 1/(1+np.exp(-self.linear))
         return self.saved
 
@@ -134,31 +133,23 @@ class SoftmaxCrossEntropy(Criterion):
     def __init__(self):
         super(SoftmaxCrossEntropy, self).__init__()
         self.loss = None
-        self.y, self.y_hat = None, None
+        self.o, self.y = None, None
         # you can add variables if needed
 
-    def forward(self, x, y):
-        print("Doing CE loss")
-        N = y.shape[0]
-
-        self.y_hat = softmax(x, axis=1) # after softmax 
-        self.y = y
-
-        print("softmaxed y_hat", self.y_hat.shape)
-        print("actual y\n", self.y.shape)
-
+    def forward(self, o, y):
+        n = y.shape[0]
+        # y_hat: softmax predictions
+        # y: one-hot true labels
+        self.o, self.y = o, y
         y_idx = self.y.argmax(axis=1)
 
-        # print("selected", self.y_hat[range(N), y_idx]) # selects y_hats corresp to actual y
-        log_likelihood = -np.log(self.y_hat[range(N), y_idx])
-        self.loss = np.sum(log_likelihood) / N
-        print(f'loss over {N} samples: {self.loss}')
+        ll = -np.log(self.o[range(n), y_idx])
+        self.loss = 1/n * np.sum(ll)
         return self.loss
 
     def derivative(self):
-        # softmax(linear out) - actual
-        print("ce deriv", self.y_hat.shape, self.y.shape)
-        return self.y_hat - self.y
+        print("cross entropy derivative", self.o.shape, self.y.shape)
+        return self.o - self.y
 
 
 # randomly intialize the weight matrix with dimension d0 x d1 via Normal distribution
@@ -183,12 +174,7 @@ class MLP(object):
     def __init__(self, input_size, output_size, hiddens, activations, weight_init_fn, bias_init_fn, criterion, lr):
 
         self.num_hiddens = len(hiddens)
-        # pre/post activation, hidden/output
-        self.pre_h = [0]*self.num_hiddens
-        self.post_h = [0]*self.num_hiddens
-        self.pre_o, self.post_o = 0, 0
-        self.softmax = None
-
+    
         # Don't change this -->
         self.train_mode = True
         self.nlayers = self.num_hiddens + 1
@@ -197,6 +183,7 @@ class MLP(object):
         self.activations = activations
         self.criterion = criterion
         self.lr = lr
+        self.o = None # softmax outputs 
         # <---------------------
 
         # Don't change the name of the following class attributes
@@ -214,27 +201,20 @@ class MLP(object):
         # list containing derivative of bias vector of each layer, each should be a np.array
         self.db = [np.zeros_like(bias) for bias in self.b]
 
-        # You can add more variables if needed
-
+    # input x: batch_size * 784
+    # hidden layer: 784 -> 128 
+    # output layer: 128 -> 10
     def forward(self, x):
-        # hidden node: 784 -> 128
-        # print("input")
-        for i in range(self.num_hiddens):
-            # linear
-            # print('x: ', x.shape)
-            # print('W:', self.W[i].shape)
-            self.pre_h[i] = np.dot(x, self.W[i])
-            # activation function
-            self.post_h[i] = self.activations[i].forward(x, self.pre_h[i])
-            # print("Post", self.post_h[i].shape)
-        # output layer: 128 -> 10
-        # -1 should be nlayers - 1
-        self.pre_o = np.dot(self.post_h[-1], self.W[-1])
-        # print("before softmax:", self.pre_o)
-        # self.post_o = self.activations[-1].forward(self.pre_o)
 
-        # self.post_o = softmax(self.pre_o, axis=1)
-        print('linear before softmax', self.pre_o.shape)
+        # -- linear, f1 = x * W0 + b0
+        self.f1 = np.dot(x, self.W[0]) + self.b[0]
+        # -- sigmoid, a = sigmoid(f1)
+        self.a = self.activations[0].forward(x, self.f1)
+
+        # -- linear, f2 = a * W1 + b1
+        self.f2 = np.dot(self.a, self.W[1]) + self.b[1]
+        # -- softmax, o = Softmax(f2)
+        self.o = np.exp(self.f2) / np.sum(np.exp(self.f2), axis=1)
 
     def zero_grads(self):
         # set dW and db to be zero
@@ -243,33 +223,32 @@ class MLP(object):
 
     def step(self):     
         # update the W and b on each layer
-        print(self.W[0].shape, self.dW[0].shape)
         for i in range(self.nlayers):
-            self.W[i] = self.W[i] - self.lr * self.dW[i]
-            self.b[i] = self.b[i] - self.lr * self.db[i]
+            self.W[i] = self.W[i] - self.lr * self.dW[i].T
+            self.b[i] = self.b[i] - self.lr * self.db[i].T
+        
 
     def backward(self, labels):
-        self.loss = self.criterion.forward(self.pre_o, labels)
+        self.loss = self.criterion.forward(self.o, labels)
+
         if self.train_mode:
             # calculate dW and db only under training mode
-            sftmax_deriv = self.criterion.derivative()
-            
-            # W1, b1
-            self.dW[1] = sftmax_deriv.T @ self.post_h[0]
-            print(self.dW[1].shape)
-            self.db[1] = sftmax_deriv
+            df2 = self.db[1] =  self.criterion.derivative() # deriv of softmax
+            print(f"df2 shape: {df2.shape}")
+            print(f"W1 shape: {self.W[1].shape}")
+            print(f"a shape: {self.a.shape}")
 
-            #W0, b0
+            da               =  df2 @ self.W[1].T
+            print(f"da shape: {da.shape}")
+
+            self.dW[1]       =  df2.T @ self.a
+
+            df1 = self.db[0] =  da * self.activations[0].derivative()
             x = self.activations[0].x
-            print('layer 0')
-            print(sftmax_deriv.shape)
-            print(self.W[1].shape)
-            print(self.activations[0].derivative().shape)
-            print(x.shape)
-            self.dW[0] = sftmax_deriv @ self.W[1].T @ self.activations[0].derivative().T @ x
-            self.db[0] = sftmax_deriv @ self.W[1].T @ self.activations[0].derivative().T 
-             
-            
+            print(f"df1 shape: {df1.shape}")
+            print(f"x shape: {x.shape}")
+            self.dW[0] =  df1.T @ x
+
 
     def __call__(self, x):
         return self.forward(x)
@@ -413,7 +392,7 @@ def main():
     activations = [Sigmoid()]
     lr = 0.05
     num_epochs = 10
-    batch_size = 8
+    batch_size = 1
 
     # build your MLP model
     mlp = MLP(

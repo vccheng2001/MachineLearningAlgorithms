@@ -2,7 +2,6 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from scipy.special import softmax
 
 class Activation(object):
 
@@ -164,6 +163,13 @@ def zeros_bias_init(d):
     return b
 
 
+def softmax(x):
+    exp = np.exp(x)
+    sm  = exp / np.sum(exp, axis=1, keepdims=True)
+    return(sm)
+
+
+
 class MLP(object):
 
     """
@@ -220,7 +226,8 @@ class MLP(object):
         print(self.b[1].shape)
         self.f2 = np.dot(self.a, self.W[1]) + self.b[1]
         # -- softmax, o = Softmax(f2)
-        self.o = np.exp(self.f2) / np.sum(np.exp(self.f2), axis=1)
+        self.o = softmax(self.f2)
+
 
     def zero_grads(self):
         # set dW and db to be zero
@@ -400,7 +407,7 @@ def main():
     activations = [Sigmoid()]
     lr = 0.05
     num_epochs = 10
-    batch_size = 1
+    batch_size = 8
 
     # build your MLP model
     mlp = MLP(

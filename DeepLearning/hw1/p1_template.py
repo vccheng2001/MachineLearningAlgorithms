@@ -218,19 +218,12 @@ class MLP(object):
     # hidden layer: 784 -> 128 
     # output layer: 128 -> 10
     def forward(self, x):
-
         # -- linear, f1 = x * W0 + b0
-        # print(x.shape)
-        # print(self.W[0].shape)
-        # print(self.b[0].shape,'\n')
         self.f1 = np.dot(x, self.W[0]) + self.b[0]
         # -- sigmoid, a = sigmoid(f1)
         self.a = self.activations[0].forward(x, self.f1)
 
         # -- linear, f2 = a * W1 + b1
-        # print(self.a.shape)
-        # print(self.W[1].shape)
-        # print(self.b[1].shape)
         self.f2 = np.dot(self.a, self.W[1]) + self.b[1]
         # -- softmax, o = Softmax(f2)
         self.o = softmax(self.f2)
@@ -257,11 +250,6 @@ class MLP(object):
             self.dW[1]       =  df2.T @ self.a
             df1 = self.db[0] =  da * self.activations[0].derivative()
             self.dW[0]       =  df1.T @ self.activations[0].x
-            # print(f"dW[1]: {self.dW[1].shape}")
-            # print(f"db[1]: {self.db[1].shape}")
-            
-            # print(f"dW[0]: {self.dW[0].shape}")
-            # print(f"dW[0]: {self.db[0].shape}")
 
 
     def __call__(self, x):
@@ -277,7 +265,7 @@ class MLP(object):
 
     def get_loss(self, labels):
         # return the current loss value given labels
-        return self.loss
+        return self.criterion.forward(self.o, labels)
 
     def get_error(self, labels):
         # return the number of incorrect preidctions gievn labels
@@ -286,13 +274,13 @@ class MLP(object):
         y_idx = labels.argmax(axis=1)
         # print(f"y_pred: {o_idx}, y_actual: {y_idx}")
         for i in range(len(o_idx)):
+            print(o_idx[i], y_idx[i], o_idx[i] == y_idx[i])
             if o_idx[i] != y_idx[i]:
                 count += 1
         return count
 
     def save_model(self, path='p1_model.npz'):
         # save the parameters of MLP (do not change)
-
         np.savez(path, self.W, self.b)
 
 
@@ -321,7 +309,7 @@ def get_training_stats(mlp, dset, nepochs, batch_size):
 
         for b in range(0, num_train, batch_size):
             mlp.train()
-            mlp.forward(trainx[b:b+batch_size])
+            mlp(trainx[b:b+batch_size])
             mlp.backward(trainy[b:b+batch_size])
             mlp.step()
             train_loss += mlp.get_loss(trainy[b:b+batch_size])
@@ -372,13 +360,13 @@ def main():
     image_size = 28 # width and length of mnist image
     num_labels = 10 #  i.e. 0, 1, 2, 3, ..., 9
     image_pixels = image_size * image_size
-    # train_data = np.loadtxt("../mnist/mnist_train.csv", delimiter=",")
-    # test_data = np.loadtxt("../mnist/mnist_test.csv", delimiter=",") 
+    train_data = np.loadtxt("../mnist/mnist_train.csv", delimiter=",")
+    test_data = np.loadtxt("../mnist/mnist_test.csv", delimiter=",") 
     # np.savez_compressed("../mnist/compressed.npz",train=train_data,test=test_data)
 
-    npz_file = np.load("../mnist/compressed.npz")
-    train_data = npz_file['train']
-    test_data = npz_file['test']
+    # npz_file = np.load("../mnist/compressed.npz")
+    # train_data = npz_file['train']
+    # test_data = npz_file['test']
 
     # rescale image from 0-255 to 0-1
     fac = 1.0 / 255
@@ -412,9 +400,9 @@ def main():
     # this is the only part you need to change in main() function
     hiddens = [128]
     activations = [Sigmoid()]
-    lr = 0.03
-    num_epochs = 3
-    batch_size = 8
+    lr = 0.05
+    num_epochs = 10
+    batch_size = 16
 
     # build your MLP model
     mlp = MLP(

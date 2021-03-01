@@ -62,9 +62,16 @@ class Sigmoid(Activation):
         return self.saved
 
     def derivative(self):
-        # deriv of sigmoid
-        return self.saved * (1-self.saved)
-
+        # deriv of sigmoid is a diagonal matrix
+        # a(1-a) if diagonal, 0 o/w
+        dim = self.saved.shape[1] 
+        diag = np.eye(dim)
+        for i in range(dim):
+            elem_i = self.saved[0][i] * (1-self.saved[0][i])
+            diag[i][i] = elem_i
+        # self.saved = np.squeeze(self.saved)
+        # diag[range(dim),range(dim)] = self.saved * (1-self.saved)
+        return diag
 
 class Tanh(Activation):
 
@@ -248,9 +255,8 @@ class MLP(object):
             df2 = self.db[1] =  self.criterion.derivative() # deriv of softmax
             da               =  df2 @ self.W[1].T
             self.dW[1]       =  df2.T @ self.a
-            df1 = self.db[0] =  da * self.activations[0].derivative()
+            df1 = self.db[0] =  da @ self.activations[0].derivative()
             self.dW[0]       =  df1.T @ self.activations[0].x
-
 
     def __call__(self, x):
         return self.forward(x)
@@ -360,13 +366,13 @@ def main():
     image_size = 28 # width and length of mnist image
     num_labels = 10 #  i.e. 0, 1, 2, 3, ..., 9
     image_pixels = image_size * image_size
-    train_data = np.loadtxt("../mnist/mnist_train.csv", delimiter=",")
-    test_data = np.loadtxt("../mnist/mnist_test.csv", delimiter=",") 
+    # train_data = np.loadtxt("../mnist/mnist_train.csv", delimiter=",")
+    # test_data = np.loadtxt("../mnist/mnist_test.csv", delimiter=",") 
     # np.savez_compressed("../mnist/compressed.npz",train=train_data,test=test_data)
 
-    # npz_file = np.load("../mnist/compressed.npz")
-    # train_data = npz_file['train']
-    # test_data = npz_file['test']
+    npz_file = np.load("../mnist/compressed.npz")
+    train_data = npz_file['train']
+    test_data = npz_file['test']
 
     # rescale image from 0-255 to 0-1
     fac = 1.0 / 255

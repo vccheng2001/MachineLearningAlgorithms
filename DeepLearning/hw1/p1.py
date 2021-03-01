@@ -2,9 +2,7 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import pdb
-import faulthandler;
-faulthandler.enable()
+
 class Activation(object):
 
     """
@@ -69,7 +67,6 @@ class Sigmoid(Activation):
         for i in range(dim):
             elem_i = self.saved[0][i] * (1-self.saved[0][i])
             diag[i][i] = elem_i
-        # self.saved = np.squeeze(self.saved)
         # diag[range(dim),range(dim)] = self.saved * (1-self.saved)
         return diag
 
@@ -226,6 +223,7 @@ class MLP(object):
     # output layer: 128 -> 10
     def forward(self, x):
         # -- linear, f1 = x * W0 + b0
+        # print(x.shape, self.W[0].shape, self.b[0].shape)
         self.f1 = np.dot(x, self.W[0]) + self.b[0]
         # -- sigmoid, a = sigmoid(f1)
         self.a = self.activations[0].forward(x, self.f1)
@@ -253,10 +251,15 @@ class MLP(object):
         if self.train_mode:
             # calculate dW and db only under training mode
             df2 = self.db[1] =  self.criterion.derivative() # deriv of softmax
+            # print('dE/df2', df2.shape) #dE/df2: 1xK
+            # print('df2/da', self.W[1].T.shape) # df2/da: KxM
             da               =  df2 @ self.W[1].T
             self.dW[1]       =  df2.T @ self.a
             df1 = self.db[0] =  da @ self.activations[0].derivative()
+            # print('da/df1',self.activations[0].derivative().shape) # da/df1
             self.dW[0]       =  df1.T @ self.activations[0].x
+            # print('df1/dx', self.W[0].T.shape) # df1/dx MxN
+            # exit(0)
 
     def __call__(self, x):
         return self.forward(x)
@@ -278,9 +281,7 @@ class MLP(object):
         count = 0
         o_idx = self.o.argmax(axis=1)
         y_idx = labels.argmax(axis=1)
-        # print(f"y_pred: {o_idx}, y_actual: {y_idx}")
         for i in range(len(o_idx)):
-            print(o_idx[i], y_idx[i], o_idx[i] == y_idx[i])
             if o_idx[i] != y_idx[i]:
                 count += 1
         return count
@@ -373,7 +374,6 @@ def main():
     npz_file = np.load("../mnist/compressed.npz")
     train_data = npz_file['train']
     test_data = npz_file['test']
-
     # rescale image from 0-255 to 0-1
     fac = 1.0 / 255
     train_imgs = np.asfarray(train_data[:50000, 1:]) * fac
@@ -404,11 +404,11 @@ def main():
     # These are only examples of parameters you can start with
     # you can tune these parameters to improve the performance of your MLP
     # this is the only part you need to change in main() function
-    hiddens = [128]
+    hiddens = [256]
     activations = [Sigmoid()]
     lr = 0.05
-    num_epochs = 10
-    batch_size = 16
+    num_epochs = 15
+    batch_size = 8
 
     # build your MLP model
     mlp = MLP(

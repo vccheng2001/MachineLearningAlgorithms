@@ -53,21 +53,21 @@ class Sigmoid(Activation):
         super(Sigmoid, self).__init__()
 
     def forward(self, x, linear):
-        # sigmoid
+        # sigmoid: 1 / 1+exp(-x)
         self.x = x
         self.linear = linear
         self.saved = 1/(1+np.exp(-self.linear))
         return self.saved
 
     def derivative(self):
-        # deriv of sigmoid is a diagonal matrix
-        # a(1-a) if diagonal, 0 o/w
+        # derivative of sigmoid is a diagonal matrix
+        # sigmoid(x) * (1-sigmoid(x)) if diagonal, 0 otherwise
         dim = self.saved.shape[1] 
         diag = np.eye(dim)
+        # fill in diagonal elements 
         for i in range(dim):
             elem_i = self.saved[0][i] * (1-self.saved[0][i])
             diag[i][i] = elem_i
-        # diag[range(dim),range(dim)] = self.saved * (1-self.saved)
         return diag
 
 class Tanh(Activation):
@@ -99,12 +99,13 @@ class ReLU(Activation):
         super(ReLU, self).__init__()
 
     def forward(self, x):
-        self.saved = max(0,x)
-        return self.saved
+        # max(0, x)
+        self.saved = x
+        return self.max(0,x)
 
     def derivative(self):
-        return self.saved * (self.saved >= 0)
-
+        # 1 if x > 0, else 0
+        return 1 if self.saved > 0 else 0 
 
 class Criterion(object):
 
@@ -137,13 +138,14 @@ class SoftmaxCrossEntropy(Criterion):
 
     def __init__(self):
         super(SoftmaxCrossEntropy, self).__init__()
+        # loss 
         self.loss = None
+        # predicted, actual 
         self.o, self.y = None, None
-        # you can add variables if needed
 
     def forward(self, o, y):
         n = y.shape[0]
-        # y_hat: softmax predictions
+        # o: softmax predictions
         # y: one-hot true labels
         self.o, self.y = o, y
         y_idx = self.y.argmax(axis=1)
@@ -153,11 +155,11 @@ class SoftmaxCrossEntropy(Criterion):
         return self.loss
 
     def derivative(self):
-        # print("cross entropy derivative", self.o.shape, self.y.shape)
         return self.o - self.y
 
 
-# randomly intialize the weight matrix with dimension d0 x d1 via Normal distribution
+# randomly intialize the weight matrix with dimension d0 x d1 
+# via Normal distribution
 def random_normal_weight_init(d0, d1):
     W = np.random.normal(size=(d0,d1))
     return W
@@ -168,11 +170,11 @@ def zeros_bias_init(d):
     b = np.zeros((1,d))
     return b
 
-
+# Softmax 
 def softmax(x):
     exp = np.exp(x)
-    sm  = exp / np.sum(exp, axis=1, keepdims=True)
-    return(sm)
+    sftmx  = exp / np.sum(exp, axis=1, keepdims=True)
+    return sftmx
 
 
 
@@ -200,22 +202,21 @@ class MLP(object):
 
         # Don't change the name of the following class attributes
         self.nn_dim = [input_size] + hiddens + [output_size]
-        # list containing Weight matrices of each layer, each should be a np.array
-        # self.W = [weight_init_fn(self.nn_dim[i], self.nn_dim[i+1]) for i in range(self.nlayers)]
+        
+        # initialize weight
         self.W = np.array([0,0], dtype=object)
         for i in range(self.nlayers):
             self.W[i] = weight_init_fn(self.nn_dim[i], self.nn_dim[i+1])
-        # self.W = np.asarray([weight_init_fn(self.nn_dim[i], self.nn_dim[i+1]) for i in range(self.nlayers)], dtype=object)
-        # list containing derivative of Weight matrices of each layer, each should be a np.array
+    
+        # initialize gradient of weight
         self.dW = [np.zeros_like(weight) for weight in self.W]
 
-        # list containing bias vector of each layer, each should be a np.array
-        # self.b = [bias_init_fn(self.nn_dim[i+1]) for i in range(self.nlayers)]
-        # self.b = np.asarray([bias_init_fn(self.nn_dim[i+1]) for i in range(self.nlayers)],dtype=object)
-        # list containing derivative of bias vector of each layer, each should be a np.array
+        # initialize bias 
         self.b = np.array([0,0], dtype=object)
         for i in range(self.nlayers):
             self.b[i] = bias_init_fn(self.nn_dim[i+1])
+            
+        # initialize gradient of bias
         self.db = [np.zeros_like(bias) for bias in self.b]
 
     # input x: batch_size * 784
@@ -227,7 +228,6 @@ class MLP(object):
         self.f1 = np.dot(x, self.W[0]) + self.b[0]
         # -- sigmoid, a = sigmoid(f1)
         self.a = self.activations[0].forward(x, self.f1)
-
         # -- linear, f2 = a * W1 + b1
         self.f2 = np.dot(self.a, self.W[1]) + self.b[1]
         # -- softmax, o = Softmax(f2)
@@ -242,6 +242,7 @@ class MLP(object):
     def step(self):     
         # update the W and b on each layer
         for i in range(self.nlayers):
+            # gradient descent 
             self.W[i] = self.W[i] - self.lr * self.dW[i].T
             self.b[i] = self.b[i] - self.lr * self.db[i]
 
@@ -250,16 +251,12 @@ class MLP(object):
 
         if self.train_mode:
             # calculate dW and db only under training mode
-            df2 = self.db[1] =  self.criterion.derivative() # deriv of softmax
-            # print('dE/df2', df2.shape) #dE/df2: 1xK
-            # print('df2/da', self.W[1].T.shape) # df2/da: KxM
-            da               =  df2 @ self.W[1].T
-            self.dW[1]       =  df2.T @ self.a
-            df1 = self.db[0] =  da @ self.activations[0].derivative()
-            # print('da/df1',self.activations[0].derivative().shape) # da/df1
-            self.dW[0]       =  df1.T @ self.activations[0].x
-            # print('df1/dx', self.W[0].T.shape) # df1/dx MxN
-            # exit(0)
+            df2 = self.db[1] =  self.criterion.derivative()             # dE/df2
+            da               =  df2 @ self.W[1].T                       # dE/da
+            self.dW[1]       =  df2.T @ self.a                          # dE/dW1
+            df1 = self.db[0] =  da @ self.activations[0].derivative()   # dE/df1
+            self.dW[0]       =  df1.T @ self.activations[0].x           # dE/dW0
+           
 
     def __call__(self, x):
         return self.forward(x)
@@ -273,19 +270,20 @@ class MLP(object):
         self.train_mode = False
 
     def get_loss(self, labels):
-        # return the current loss value given labels
+        # return softmax cross entropy loss given labels
         return self.criterion.forward(self.o, labels)
 
     def get_error(self, labels):
-        # return the number of incorrect preidctions gievn labels
+        # return the number of incorrect predictions gievn labels
         count = 0
-        o_idx = self.o.argmax(axis=1)
-        y_idx = labels.argmax(axis=1)
+        o_idx = self.o.argmax(axis=1) # index of predicted class
+        y_idx = labels.argmax(axis=1) # index of actual class 
         for i in range(len(o_idx)):
-            if o_idx[i] != y_idx[i]:
+            if o_idx[i] != y_idx[i]:  # increase error if pred != actual
                 count += 1
         return count
 
+    # Save model
     def save_model(self, path='p1_model.npz'):
         # save the parameters of MLP (do not change)
         np.savez(path, self.W, self.b)

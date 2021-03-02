@@ -56,18 +56,19 @@ class Sigmoid(Activation):
         # sigmoid: 1 / 1+exp(-x)
         self.x = x
         self.linear = linear
-        self.saved = 1/(1+np.exp(-self.linear))
-        return self.saved
+        self.sigmoid = 1/(1+np.exp(-self.linear))
+        return self.sigmoid
 
     def derivative(self):
-        # derivative of sigmoid is a diagonal matrix
-        # sigmoid(x) * (1-sigmoid(x)) if diagonal, 0 otherwise
-        dim = self.saved.shape[1] 
+        # derivative of sigmoid is sigmoid(x) * (1-sigmoid(x))
+
+        # during backprop, derivative is a diagonal matrix M x M 
+        # sigmoid(x) * (1-sigmoid(x)) for diagonal entries, 0 otherwise
+        dim = self.sigmoid.shape[1] 
         diag = np.eye(dim)
         # fill in diagonal elements 
         for i in range(dim):
-            elem_i = self.saved[0][i] * (1-self.saved[0][i])
-            diag[i][i] = elem_i
+            diag[i][i] = self.sigmoid[0][i] * (1-self.sigmoid[0][i])
         return diag
 
 class Tanh(Activation):
@@ -81,12 +82,12 @@ class Tanh(Activation):
 
     def forward(self, x):
         # tanh(x)
-        self.saved = (2/(1+np.exp(-2*x))) - 1
-        return self.saved 
+        self.tanh = (2/(1+np.exp(-2*x))) - 1
+        return self.tanh
 
     def derivative(self):
         # 1 - (tanh(x))^2
-        return 1-(self.saved**2)
+        return 1-(self.tanh**2)
 
 
 class ReLU(Activation):
@@ -99,13 +100,13 @@ class ReLU(Activation):
         super(ReLU, self).__init__()
 
     def forward(self, x):
-        # max(0, x)
-        self.saved = x
-        return np.max(0,x)
+        # element-wise maximum(x,0)
+        self.x = x
+        return np.maximum(0,x)
 
     def derivative(self):
-        # 1 if x > 0, else 0
-        return np.where(self.saved > 0, 1, 0)
+        # returns 1 for each element x if x > 0, else 0
+        return np.where(self.x > 0, 1, 0)
 
 class Criterion(object):
 
@@ -130,6 +131,12 @@ class Criterion(object):
         raise NotImplemented
 
 
+# Softmax 
+def softmax(x):
+    exp = np.exp(x)
+    sftmx  = exp / np.sum(exp, axis=1, keepdims=True)
+    return sftmx
+
 class SoftmaxCrossEntropy(Criterion):
 
     """
@@ -148,13 +155,15 @@ class SoftmaxCrossEntropy(Criterion):
         # o: softmax predictions
         # y: one-hot true labels
         self.o, self.y = o, y
-        y_idx = self.y.argmax(axis=1)
+        y_idx = self.y.argmax(axis=1)       # index of true y 
 
-        ll = -np.log(self.o[range(n), y_idx])
-        self.loss = np.sum(ll)
+        # -1 * sum(y * log (o))
+        self.loss = -np.log(self.o[range(n), y_idx])
+        self.loss = np.sum(self.loss)
         return self.loss
 
     def derivative(self):
+        # pred - actual
         return self.o - self.y
 
 
@@ -169,13 +178,6 @@ def random_normal_weight_init(d0, d1):
 def zeros_bias_init(d):
     b = np.zeros((1,d))
     return b
-
-# Softmax 
-def softmax(x):
-    exp = np.exp(x)
-    sftmx  = exp / np.sum(exp, axis=1, keepdims=True)
-    return sftmx
-
 
 
 class MLP(object):
@@ -225,7 +227,6 @@ class MLP(object):
         # -- softmax, o = Softmax(f2)
         self.o = softmax(self.f2)
 
-
     def zero_grads(self):
         # set dW and db to be zero
         self.dW = [np.zeros_like(weight) for weight in self.W]
@@ -239,6 +240,7 @@ class MLP(object):
             self.b[i] = self.b[i] - self.lr * self.db[i]
 
     def backward(self, labels):
+        # compute softmax cross entropy loss
         self.loss = self.criterion.forward(self.o, labels)
 
         if self.train_mode:

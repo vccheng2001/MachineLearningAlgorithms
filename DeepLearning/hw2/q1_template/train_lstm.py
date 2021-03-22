@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 
 from dataset import FlowDataset
 from lstm import FlowLSTM
+from matplotlib import pyplot as plt
 
 
 def main():
@@ -27,6 +28,7 @@ def main():
     hidden_size = 128
     num_layers = 2
     dropout = 0.1
+    num_train = len(train_dataset)
 
     model = FlowLSTM(
         input_size=input_size, 
@@ -41,8 +43,11 @@ def main():
     # define optimizer for lstm model
     optim = Adam(model.parameters(), lr=lr)
 
+    training_losses = [] 
+
     for epoch in range(num_epochs):
         print(f"epoch #{epoch}")
+        train_loss = 0 
         for n_batch, (in_batch, label) in enumerate(train_loader):
             # print(in_batch,label)
             in_batch, label = in_batch.to(device), label.to(device)
@@ -53,6 +58,8 @@ def main():
             y_pred, (hn,cn) = model(in_batch)
             # calculate LSTM MSE loss
             loss = loss_func(y_pred, label)
+            # accum train loss as Python float
+            train_loss += loss.item()
             # zero gradient 
             optim.zero_grad()
             # backward pass
@@ -60,11 +67,10 @@ def main():
             # update parameters 
             optim.step()
 
-            # print loss while training
-
             if (n_batch + 1) % 200 == 0:
                 print("Epoch: [{}/{}], Batch: {}, Loss: {}".format(
                     epoch, num_epochs, n_batch, loss.item()))
+        print(f"training loss: {train_loss/num_train})")
 
     # test trained LSTM model
     l1_err, l2_err = 0, 0
@@ -98,7 +104,6 @@ def main():
     for j in range(-x,x+1):
         r.append(interval*j)
 
-    from matplotlib import pyplot as plt
     plt.figure()
     for i in range(1, len(pred)):
         c = (i/(num_points+1), 1-i/(num_points+1), 0.5)
@@ -117,6 +122,12 @@ def main():
     plt.ylabel('r [m]')
     plt.legend(bbox_to_anchor=(1,1),fontsize='x-small')
     plt.savefig('label')
+    plt.show()
+
+    plt.plot(range(num_epochs),training_losses, label="training loss")
+    plt.xlabel('Epochs')
+    plt.ylabel('Training loss')
+    plt.legend()
     plt.show()
 
 

@@ -62,7 +62,7 @@ class FlowLSTM(nn.Module):
 
 
     def init_hidden_state(self, batch_size):
-        return Variable(torch.zeros(batch_size, self.hidden_size)).to(self.device)
+        return Variable(torch.zeros(batch_size, self.hidden_size),requires_grad=True).to(self.device)
 
     # forward pass through LSTM layer for testing
     def test(self, x):

@@ -21,22 +21,32 @@ class FlowLSTM(nn.Module):
             and ground truth us of dimension (batch_size, 19, 17)'''
 
         self.input_size = input_size        # num features in x (vector length)
-        self.hidden_size = hidden_size      # hidden nodes in LSTM layer 
-        self.num_layers = num_layers        # num LSTM layers 
+        self.hidden_size = hidden_size      # num LSTM blocks per layer 
+        self.num_layers = num_layers        # num LSTM layers (vertical)
         self.dropout = dropout              # dropout probability 
 
         # define LSTM layer 
-        self.lstm = nn.LSTM(self.input_size, self.hidden_size, self.num_layers)
+        self.lstm = nn.LSTM(self.input_size,
+                            self.hidden_size, 
+                            self.num_layers)
 
 
     # forward pass through LSTM layer
     def forward(self, x):
-        '''            # sequences            # vars in time series 
-                        (batch_size, seq_len,  num_features)
+        '''           # sequences, seq length,  # vars in time series 
+                        (batch_size, seq_len,  num_features/input_size)
         input: x of dim (batch_size,     19,        17)
         '''
-
-        self.lstm()
+        (self.batch_size, self.seq_len, self.inpu_size) = x.shape
+        
+        h0 = torch.randn(self.num_layers, self.batch_size, self.hidden_size) # initialize hidden 
+        c0 = torch.randn(self.num_layers, self.batch_size, self.hidden_size) # initialize cell
+        # concat h0, c0 as hidden
+        hidden = (h0, c0)
+        output, (hn,cn) = self.lstm(x, hidden)
+        print(f"output shape: {output.shape}")
+        print(f"hidden: {hidden}")
+        
 
 
     # forward pass through LSTM layer for testing

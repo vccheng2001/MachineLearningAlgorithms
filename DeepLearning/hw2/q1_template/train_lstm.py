@@ -34,8 +34,8 @@ def main():
         dropout=dropout
     ).to(device)
 
-    # define Binary Cross Entropy Loss
-    loss_func = nn.BCELoss() 
+    # define Cross Entropy Loss
+    loss_func = nn.CrossEntropyLoss() 
 
     # define optimizer for lstm model
     optim = Adam(model.parameters(), lr=lr)
@@ -82,7 +82,7 @@ def main():
     print("Test L2 error:", l2_err)
 
     # visualize the prediction comparing to the ground truth
-    if device is 'cpu':
+    if device == 'cpu':
         pred = pred.detach().numpy()[0,:,:]
         label = label.detach().numpy()[0,:,:]
     else:

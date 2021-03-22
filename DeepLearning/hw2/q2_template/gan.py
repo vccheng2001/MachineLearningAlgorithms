@@ -11,7 +11,9 @@ class Discriminator(nn.Module):
     
     def forward(self, x):
         # define your feedforward pass
-        return NotImplementedError
+        x= x.view(x.size[0], -1)
+        prediction = self.discrim(x)
+        return disc 
 
 
 class Generator(nn.Module):
@@ -24,5 +26,5 @@ class Generator(nn.Module):
     
     def forward(self, x):
         # define your feedforward pass
-        return NotImplementedError
+
 

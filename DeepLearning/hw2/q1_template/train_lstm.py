@@ -107,6 +107,7 @@ def main():
     plt.xlabel('velocity [m/s]')
     plt.ylabel('r [m]')
     plt.legend(bbox_to_anchor=(1,1),fontsize='x-small')
+    plt.savefig('pred')
     plt.show()
 
     plt.figure()
@@ -116,6 +117,7 @@ def main():
     plt.xlabel('velocity [m/s]')
     plt.ylabel('r [m]')
     plt.legend(bbox_to_anchor=(1,1),fontsize='x-small')
+    plt.savefig('label')
     plt.show()
 
 

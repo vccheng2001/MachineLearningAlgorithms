@@ -46,7 +46,7 @@ def main():
             # train VAE
 
             # calculate customized VAE loss
-            # loss = your_loss_func(...)
+            #loss = your_loss_func(...)
 
             optim.zero_grad()
             loss.backward()

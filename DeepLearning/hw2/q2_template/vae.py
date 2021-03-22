@@ -16,7 +16,10 @@ class Encoder(nn.Module):
         shown in Fig. 7a. Therefore, only y coordinates of each airfoil is used to train and test generative models.
         '''
 
-        # 1600 -> 200
+        self.input_dim = input_dim
+        self.latent_dim = latent_dim 
+
+        # define layers: 1600->200
         self.fc = nn.Linear(input_dim, latent_dim)
         
     
@@ -32,6 +35,10 @@ class Decoder(nn.Module):
         # your output should be of dim (batch_size, output_dim)
         # you can use tanh() as the activation for the last layer
         # since y coord of airfoils range from -1 to 1
+
+        self.latent_dim = latent_dim
+        self.output_dim = output_dim 
+        # define layer: 200->1600
         self.fc = nn.Linear(latent_dim, output_dim)
     
     def forward(self, x):

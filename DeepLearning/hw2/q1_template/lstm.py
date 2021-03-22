@@ -20,13 +20,7 @@ class FlowLSTM(nn.Module):
         self.num_layers = num_layers        # num LSTM/recurrentlayers (vertical)
         self.dropout = dropout              # dropout probability 
         self.seq_len = 0
-
-        # define LSTM (for train))
-        self.lstm = nn.LSTM(input_size  = self.input_size,
-                            hidden_size = self.hidden_size,
-                            num_layers = self.num_layers,
-                            dropout = self.dropout,
-                            batch_first=True)
+        self.hidden = None
 
         # define LSTM Cell (for test)
         self.lstmCell = nn.LSTMCell(input_size = self.input_size,
@@ -35,8 +29,6 @@ class FlowLSTM(nn.Module):
         self.linear = nn.Linear(self.hidden_size, self.input_size)
     
 
-    def init_hidden_state(self, batch_size):
-        return Variable(torch.zeros(self.num_layers, batch_size, self.hidden_size)).to(self.device)
 
     # forward pass through LSTM layer
     def forward(self, x):
@@ -46,19 +38,29 @@ class FlowLSTM(nn.Module):
         input x: (batch_size,   19,     17)
         '''
 
-        batch_size, self.seq_len, _  = x.shape
+        (batch_size, self.seq_len, input_size) = x.shape
         
         # batch size, hidden size
-        h0 = self.init_hidden_state(batch_size)
-        c0 = self.init_hidden_state(batch_size)
+        hx = self.init_hidden_state()
+        cx = self.init_hidden_state()
 
-        out, (hn,cn) =  self.lstm(x, (h0, c0))
-        out          =  self.linear(out) 
-        return out, (hn, cn)
+        output = []
+        # for each input x[i] in batch
+        for i in range(batch_size):
+            # hidden for batch i 
+            hx, cx = self.lstmCell(x[i], (hx, cx))
+            # map output dim from 128 -> 17 
+            out = self.linear(hx)
+            # append to output array
+            output.append(out)
+        # convert output to tensor 
+        output = torch.stack(output, dim = 1 )
+        self.hidden =  (hx, cx)
+        return output, self.hidden
 
 
-    def init_hidden_state_test(self, batch_size):
-        return Variable(torch.zeros(batch_size, self.hidden_size)).to(self.device)
+    def init_hidden_state(self):
+        return Variable(torch.zeros(self.seq_len, self.hidden_size)).to(self.device)
 
     # forward pass through LSTM layer for testing
     def test(self, x):
@@ -67,14 +69,15 @@ class FlowLSTM(nn.Module):
         '''
         batch_size, input_size  = x.shape #
         # hiddens: batch size, hidden size
-        hx = self.init_hidden_state_test(batch_size)
-        cx = self.init_hidden_state_test(batch_size)
         output = []
         # for each input x[i] in batch
         out = x
+        (hx, cx) = self.hidden # init
         for t in range(self.seq_len): 
             # lstm Cell takes in prev timestep's output as inputs
             (hx, cx) = self.lstmCell(out, (hx, cx))
+            # feed output (hx) back
+            out = hx
             output.append(out)
         output = torch.stack(output, dim = 1)
         return output

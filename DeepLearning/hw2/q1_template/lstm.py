@@ -13,6 +13,7 @@ class FlowLSTM(nn.Module):
     
         ''' In training set, your input is of dimension (batch_size, 19, 17) 
             and ground truth is of dimension (batch_size, 19, 17)'''
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         self.input_size = input_size        # num features in x (vector length)
         self.hidden_size = hidden_size      # num LSTM cells per layer 
@@ -22,9 +23,9 @@ class FlowLSTM(nn.Module):
 
         # define LSTM Cell
         self.lstm = nn.LSTMCell(input_size  = self.input_size,
-                                hidden_size = self.hidden_size)
+                                hidden_size = self.hidden_size).to(device)
 
-        self.linear = nn.Linear(self.hidden_size, self.input_size)
+        self.linear = nn.Linear(self.hidden_size, self.input_size).to(device)
     
 
     # forward pass through LSTM layer
@@ -34,7 +35,6 @@ class FlowLSTM(nn.Module):
         # Size: [batch_size, seq_len, input_size]
         input x: (batch_size,   19,     17)
         '''
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         (batch_size, self.seq_len, input_size) = x.shape
         
@@ -47,11 +47,8 @@ class FlowLSTM(nn.Module):
         for i in range(batch_size):
             # hidden for batch i 
             hx, cx = self.lstm(x[i], (hx, cx))
-            hx.to(device)
-            cx.to(device)
             # map output dim from 128 -> 17 
             out = self.linear(hx)
-            out.to(device)
             # append to output array
             output.append(out)
         # convert output to tensor 
@@ -65,7 +62,6 @@ class FlowLSTM(nn.Module):
         '''
         input: x of dim (batch_size, 17) [ only one x ]
         '''
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         (batch_size, input_size) = x.shape
 
@@ -81,11 +77,8 @@ class FlowLSTM(nn.Module):
             inp = inp.repeat(self.seq_len,1)
             # hidden for batch i
             hx, cx = self.lstm(inp, (hx, cx))
-            hx.to(device)
-            cx.to(device)
             # map output dim from 128 -> 17 
             out = self.linear(hx)
-            out.to(device)
             # append to output array
             output.append(out)
         # convert output to tensor 

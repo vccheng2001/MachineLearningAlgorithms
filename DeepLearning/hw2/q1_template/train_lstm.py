@@ -73,6 +73,9 @@ def main():
 
         # append training loss for each epoch 
         training_losses.append(train_loss/n_batch)
+    # save 
+    FILE = "p1_model.ckpt"
+    torch.save(model.state_dict(), FILE)
 
     # test trained LSTM model
     l1_err, l2_err = 0, 0

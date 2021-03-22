@@ -44,7 +44,11 @@ def main():
         for n_batch, (in_batch, label) in enumerate(train_loader):
             in_batch, label = in_batch.to(device), label.to(device)
 
-           # train LSTM
+            # train LSTM
+
+            model.zero_grad()               # init grads to 0
+            output = model(in_batch, label) # forward pass 
+            
 
             # calculate LSTM loss
             # loss = loss_func(...)

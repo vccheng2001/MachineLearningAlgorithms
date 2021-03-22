@@ -37,8 +37,8 @@ class FlowLSTM(nn.Module):
         (batch_size, self.seq_len, input_size) = x.shape
         
         # batch size, hidden size
-        hx = torch.randn(seq_len, hidden_size)
-        cx = torch.randn(seq_len, hidden_size) 
+        hx = torch.randn(self.seq_len, self.hidden_size)
+        cx = torch.randn(self.seq_len, self.hidden_size) 
 
         output = []
         # for each input x[i] in batch

@@ -65,7 +65,6 @@ class FlowLSTM(nn.Module):
         '''
         input: x of dim (batch_size, 17) [ only one x ]
         '''
-
         batch_size, input_size  = x.shape #
         
         # hiddens: sbatch size, hidden size

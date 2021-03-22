@@ -70,7 +70,9 @@ def main():
             if (n_batch + 1) % 200 == 0:
                 print("Epoch: [{}/{}], Batch: {}, Loss: {}".format(
                     epoch, num_epochs, n_batch, loss.item()))
-        print(f"training loss: {train_loss/num_train})")
+
+        # append training loss for each epoch 
+        training_losses.append(train_loss/n_batch)
 
     # test trained LSTM model
     l1_err, l2_err = 0, 0

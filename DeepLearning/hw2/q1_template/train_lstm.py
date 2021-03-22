@@ -25,7 +25,7 @@ def main():
     lr = 0.005
     input_size = 17 # do not change input size
     hidden_size = 128
-    num_layers = 2
+    num_layers = 4
     dropout = 0.1
 
     model = FlowLSTM(

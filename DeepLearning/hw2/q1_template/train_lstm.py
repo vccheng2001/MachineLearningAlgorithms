@@ -21,8 +21,8 @@ def main():
     test_loader = DataLoader(dataset=test_dataset, batch_size=16, shuffle=False, num_workers=4)
 
     # hyper-parameters
-    num_epochs = 20
-    lr = 0.001
+    num_epochs = 15
+    lr = 0.005
     input_size = 17 # do not change input size
     hidden_size = 128
     num_layers = 2
@@ -47,7 +47,8 @@ def main():
             # print(in_batch,label)
             in_batch, label = in_batch.to(device), label.to(device)
             # init grads to 0
-            optim.zero_grad()      
+            optim.zero_grad() 
+            model.zero_grad()     
             # forward pass; y_pred shape: (batch_size, 19, 17)
             y_pred, (hn,cn) = model(in_batch)
             # calculate LSTM MSE loss

@@ -44,7 +44,7 @@ class FlowLSTM(nn.Module):
 
         (self.batch_size, self.seq_len, self.input_size) = x.shape
 
-        print(f"batch_size: {self.batch_size}, seq_len: {self.seq_len}, input_size: {self.input_size}")
+        # print(f"batch_size: {self.batch_size}, seq_len: {self.seq_len}, input_size: {self.input_size}")
         
         # batch size, hidden size
         hx = torch.randn(self.seq_len, self.hidden_size)
@@ -61,8 +61,8 @@ class FlowLSTM(nn.Module):
             output.append(out)
         # convert output to tensor 
         output = torch.stack(output, dim = 0 )
-        output = output[:,-1]
-        print(f" \n output LSTMCell: {output.shape}")
+        # output = output[:,-1]
+        # print(f" \n output LSTMCell: {output.shape}")
         return output, (hx, cx)
 
 

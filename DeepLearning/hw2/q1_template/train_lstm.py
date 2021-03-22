@@ -35,7 +35,7 @@ def main():
     ).to(device)
 
     # define Cross Entropy Loss
-    loss_func = nn.CrossEntropyLoss() 
+    loss_func = nn.MSELoss() 
 
     # define optimizer for lstm model
     optim = Adam(model.parameters(), lr=lr)
@@ -49,7 +49,7 @@ def main():
             optim.zero_grad()      
             # forward pass; y_pred shape: (batch_size, 19, 17)
             y_pred, (hn,cn) = model(in_batch) 
-            # calculate LSTM loss
+            # calculate LSTM MSE loss
             loss = loss_func(y_pred, label)
             # zero gradient 
             optim.zero_grad()

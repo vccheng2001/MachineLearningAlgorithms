@@ -61,6 +61,7 @@ class FlowLSTM(nn.Module):
             output.append(out)
         # convert output to tensor 
         output = torch.stack(output, dim = 0 )
+        output = output[:,-1]
         print(f" \n output LSTMCell: {output.shape}")
         return output, (hx, cx)
 

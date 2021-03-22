@@ -49,14 +49,14 @@ def main():
         print(f"epoch #{epoch}")
         train_loss = 0 
         for n_batch, (in_batch, label) in enumerate(train_loader):
-            # print(in_batch,label)
+            # mini batch
             in_batch, label = in_batch.to(device), label.to(device)
             # init grads to 0
             optim.zero_grad() 
             model.zero_grad()     
-            # forward pass; y_pred shape: (batch_size, 19, 17)
+            # forward pass
             y_pred, (hn,cn) = model(in_batch)
-            # calculate LSTM MSE loss
+            # calculate training MSE loss
             loss = loss_func(y_pred, label)
             # accum train loss as Python float
             train_loss += loss.item()
@@ -104,6 +104,7 @@ def main():
     for j in range(-x,x+1):
         r.append(interval*j)
 
+    # plot velocity predictions on test set
     plt.figure()
     for i in range(1, len(pred)):
         c = (i/(num_points+1), 1-i/(num_points+1), 0.5)
@@ -111,9 +112,10 @@ def main():
     plt.xlabel('velocity [m/s]')
     plt.ylabel('r [m]')
     plt.legend(bbox_to_anchor=(1,1),fontsize='x-small')
-    plt.savefig('pred')
+    plt.savefig('prediction')
     plt.show()
 
+    # plot ground truth velocity 
     plt.figure()
     for i in range(1, len(label)):
         c = (i/(num_points+1), 1-i/(num_points+1), 0.5)
@@ -121,13 +123,15 @@ def main():
     plt.xlabel('velocity [m/s]')
     plt.ylabel('r [m]')
     plt.legend(bbox_to_anchor=(1,1),fontsize='x-small')
-    plt.savefig('label')
+    plt.savefig('ground_truth')
     plt.show()
 
+    # plot training loss over epoch
     plt.plot(range(num_epochs),training_losses, label="training loss")
     plt.xlabel('Epochs')
     plt.ylabel('Training loss')
     plt.legend()
+    plt.savefig('training loss')
     plt.show()
 
 

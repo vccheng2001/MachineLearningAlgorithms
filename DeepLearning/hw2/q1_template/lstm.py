@@ -43,7 +43,7 @@ class FlowLSTM(nn.Module):
         # for each input x[i] in batch
         for i in range(self.batch_size):
             # hidden for batch i 
-            hx, cx = self.lstm_train(x[i], (hx, cx))
+            hx, cx = self.lstm(x[i], (hx, cx))
             # map output dim from 128 -> 17 
             out = self.linear(hx)
             # append to output array

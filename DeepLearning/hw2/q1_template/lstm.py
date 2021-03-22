@@ -20,7 +20,10 @@ class FlowLSTM(nn.Module):
         self.dropout = dropout              # dropout probability 
 
         # define LSTM Cell
-        self.lstm = nn.LSTMCell(input_size  = self.input_size,
+        self.lstm_train= nn.LSTMCell(input_size  = self.input_size,
+                                hidden_size = self.hidden_size)
+
+        self.lstm_test = nn.LSTMCell(input_size  = self.input_size,
                                 hidden_size = self.hidden_size)
 
         self.linear = nn.Linear(self.hidden_size, self.input_size)
@@ -43,7 +46,7 @@ class FlowLSTM(nn.Module):
         # for each input x[i] in batch
         for i in range(self.batch_size):
             # hidden for batch i 
-            hx, cx = self.lstm(x[i], (hx, cx))
+            hx, cx = self.lstm_train(x[i], (hx, cx))
             # map output dim from 128 -> 17 
             out = self.linear(hx)
             # append to output array
@@ -57,7 +60,31 @@ class FlowLSTM(nn.Module):
     # forward pass through LSTM layer for testing
     def test(self, x):
         '''
-        input: x of dim (batch_size, 17)
+        input: x of dim (batch_size, 17) [ only one x ]
         '''
+        self.seq_len = 19
         # define your feedforward pass
-        return NotImplementedError
+        (self.batch_size, self.input_size) = x.shape
+        
+        hx = torch.randn(self.seq_len, self.hidden_size)
+        cx = torch.randn(self.seq_len, self.hidden_size) 
+
+        output = []
+        # for each input x[i] in batch
+        for i in range(self.batch_size):
+            # instead of 16*19x17, now 16x17 -> transform to 19x17
+        
+            # hidden for batch i 
+            # print('init',x[i].shape)
+            inp = x[i].unsqueeze(0)
+            # print('unsqueeze',inp.shape)
+            inp = inp.repeat(self.seq_len,1)
+            # print('repeat',inp.shape)
+            hx, cx = self.lstm_test(inp, (hx, cx))
+            # map output dim from 128 -> 17 
+            out = self.linear(hx)
+            # append to output array
+            output.append(out)
+        # convert output to tensor 
+        output = torch.stack(output, dim = 0 )
+        return output

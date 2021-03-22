@@ -20,7 +20,7 @@ def main():
     test_loader = DataLoader(dataset=test_dataset, batch_size=16, shuffle=False, num_workers=4)
 
     # hyper-parameters
-    num_epochs = 10
+    num_epochs = 0
     lr = 0.001
     input_size = 17 # do not change input size
     hidden_size = 128
@@ -72,6 +72,7 @@ def main():
     with torch.no_grad():
         for n_batch, (in_batch, label) in enumerate(test_loader):
             in_batch, label = in_batch.to(device), label.to(device)
+            # torch.Size([16, 17]) torch.Size([16, 19, 17])
             pred = model.test(in_batch)
 
             l1_err += l1_loss(pred, label).item()

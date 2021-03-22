@@ -29,10 +29,12 @@ class FlowLSTM(nn.Module):
 
     # forward pass through LSTM layer
     def forward(self, x):
+
         '''           
         # Size: [batch_size, seq_len, input_size]
         input x: (batch_size,   19,     17)
         '''
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         (batch_size, self.seq_len, input_size) = x.shape
         
@@ -46,7 +48,7 @@ class FlowLSTM(nn.Module):
             # hidden for batch i 
             hx, cx = self.lstm(x[i], (hx, cx))
             # map output dim from 128 -> 17 
-            out = self.linear(hx)
+            out = self.linear(hx).to(device)
             # append to output array
             output.append(out)
         # convert output to tensor 
@@ -60,6 +62,8 @@ class FlowLSTM(nn.Module):
         '''
         input: x of dim (batch_size, 17) [ only one x ]
         '''
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
         (batch_size, input_size) = x.shape
 
         # initialize hidden
@@ -75,7 +79,7 @@ class FlowLSTM(nn.Module):
             # hidden for batch i
             hx, cx = self.lstm(inp, (hx, cx))
             # map output dim from 128 -> 17 
-            out = self.linear(hx)
+            out = self.linear(hx).to(device)
             # append to output array
             output.append(out)
         # convert output to tensor 

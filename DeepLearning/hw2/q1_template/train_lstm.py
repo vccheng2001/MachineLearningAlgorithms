@@ -11,7 +11,7 @@ from lstm import FlowLSTM
 
 def main():
     # check if cuda available
-    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"device: {device}")
 
     # define dataset and dataloader

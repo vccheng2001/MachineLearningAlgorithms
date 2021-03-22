@@ -54,7 +54,6 @@ class FlowLSTM(nn.Module):
 
         out, (hn,cn) =  self.lstm(x, (h0, c0))
         out          =  self.linear(out) 
-        print(out.shape)
         return out, (hn, cn)
 
 
@@ -72,7 +71,7 @@ class FlowLSTM(nn.Module):
         # hiddens: sbatch size, hidden size
         hx = self.init_hidden_state_test(batch_size)
         cx = self.init_hidden_state_test(batch_size)
-
+        self.seq_len = 19
         output = []
         # for each input x[i] in batch
         out = x
@@ -81,5 +80,5 @@ class FlowLSTM(nn.Module):
             (hx, cx) = self.lstmCell(out, (hx, cx))
             out = self.linear(hx)
             output.append(out)
-        output = torch.stack(output, dim = 0 )
+        output = torch.stack(output, dim = 1)
         return output

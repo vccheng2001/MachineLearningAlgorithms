@@ -22,7 +22,7 @@ def main():
     test_loader = DataLoader(dataset=test_dataset, batch_size=16, shuffle=False, num_workers=4)
 
     # hyper-parameters
-    num_epochs = 20
+    num_epochs = 5
     lr = 0.005
     input_size = 17 # do not change input size
     hidden_size = 128

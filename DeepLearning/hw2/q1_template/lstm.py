@@ -47,8 +47,11 @@ class FlowLSTM(nn.Module):
         for i in range(batch_size):
             # hidden for batch i 
             hx, cx = self.lstm(x[i], (hx, cx))
+            hx.to(device)
+            cx.to(device)
             # map output dim from 128 -> 17 
-            out = self.linear(hx).to(device)
+            out = self.linear(hx)
+            out.to(device)
             # append to output array
             output.append(out)
         # convert output to tensor 
@@ -78,8 +81,11 @@ class FlowLSTM(nn.Module):
             inp = inp.repeat(self.seq_len,1)
             # hidden for batch i
             hx, cx = self.lstm(inp, (hx, cx))
+            hx.to(device)
+            cx.to(device)
             # map output dim from 128 -> 17 
-            out = self.linear(hx).to(device)
+            out = self.linear(hx)
+            out.to(device)
             # append to output array
             output.append(out)
         # convert output to tensor 

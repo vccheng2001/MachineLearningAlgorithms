@@ -18,6 +18,7 @@ class FlowLSTM(nn.Module):
         self.hidden_size = hidden_size      # num LSTM cells per layer 
         self.num_layers = num_layers        # num LSTM/recurrentlayers (vertical)
         self.dropout = dropout              # dropout probability 
+        self.seq_len = None # init
 
         # define LSTM Cell
         self.lstm = nn.LSTMCell(input_size  = self.input_size,
@@ -33,15 +34,15 @@ class FlowLSTM(nn.Module):
         input x: (batch_size,   19,     17)
         '''
 
-        (self.batch_size, self.seq_len, self.input_size) = x.shape
+        (batch_size, self.seq_len, input_size) = x.shape
         
         # batch size, hidden size
-        hx = torch.randn(self.seq_len, self.hidden_size)
-        cx = torch.randn(self.seq_len, self.hidden_size) 
+        hx = torch.randn(seq_len, hidden_size)
+        cx = torch.randn(seq_len, hidden_size) 
 
         output = []
         # for each input x[i] in batch
-        for i in range(self.batch_size):
+        for i in range(batch_size):
             # hidden for batch i 
             hx, cx = self.lstm(x[i], (hx, cx))
             # map output dim from 128 -> 17 
@@ -59,7 +60,7 @@ class FlowLSTM(nn.Module):
         '''
         input: x of dim (batch_size, 17) [ only one x ]
         '''
-        (self.batch_size, self.input_size) = x.shape
+        (batch_size, input_size) = x.shape
 
         # initialize hidden
         hx = torch.randn(self.seq_len, self.hidden_size)
@@ -67,7 +68,7 @@ class FlowLSTM(nn.Module):
 
         output = []
         # for each input x[i] in batch
-        for i in range(self.batch_size):
+        for i in range(batch_size):
             # instead of 16*19x17, now 16x17 -> transform to 19x17
             inp = x[i].unsqueeze(0)
             inp = inp.repeat(self.seq_len,1)

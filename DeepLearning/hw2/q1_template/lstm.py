@@ -66,18 +66,15 @@ class FlowLSTM(nn.Module):
         input: x of dim (batch_size, 17) [ only one x ]
         '''
         batch_size, input_size  = x.shape #
-        
-        # hiddens: sbatch size, hidden size
+        # hiddens: batch size, hidden size
         hx = self.init_hidden_state_test(batch_size)
         cx = self.init_hidden_state_test(batch_size)
-        self.seq_len = 19
         output = []
         # for each input x[i] in batch
         out = x
         for t in range(self.seq_len): 
             # lstm Cell takes in prev timestep's output as inputs
             (hx, cx) = self.lstmCell(out, (hx, cx))
-            out = self.linear(hx)
             output.append(out)
         output = torch.stack(output, dim = 1)
         return output

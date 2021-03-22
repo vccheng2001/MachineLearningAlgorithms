@@ -25,11 +25,15 @@ class FlowLSTM(nn.Module):
         self.num_layers = num_layers        # num LSTM/recurrentlayers (vertical)
         self.dropout = dropout              # dropout probability 
 
-        # define LSTM layer 
-        self.lstm = nn.LSTM(self.input_size,
-                            self.hidden_size, 
-                            self.num_layers)
+        # define LSTM Cell
+        self.lstm = nn.LSTMCell(input_size  = self.input_size,
+                                hidden_size = self.hidden_size)
 
+        self.linear = nn.Linear(self.hidden_size, self.input_size)
+        # define LSTM
+        # self.lstm = nn.LSTM(self.input_size,
+        #                     self.hidden_size,
+        #                     self.num_layers)
 
     # forward pass through LSTM layer
     def forward(self, x):
@@ -37,17 +41,37 @@ class FlowLSTM(nn.Module):
         # Size: [batch_size, seq_len, input_size]
         input x: (batch_size,   19,     17)
         '''
+
         (self.batch_size, self.seq_len, self.input_size) = x.shape
 
         print(f"batch_size: {self.batch_size}, seq_len: {self.seq_len}, input_size: {self.input_size}")
-        h0 = torch.randn(self.num_layers, self.seq_len, self.hidden_size) # initialize hidden 
-        c0 = torch.randn(self.num_layers, self.seq_len, self.hidden_size) # initialize cell
         
-        # concat h0, c0 as hidden
-        hidden = (h0, c0)
-        # get output 
-        output, (hn,cn) = self.lstm(x, hidden)
-        output = output.view(self.batch_size, self.seq_len, self.input_size)
+        # batch size, hidden size
+        hx = torch.randn(self.seq_len, self.hidden_size)
+        cx = torch.randn(self.seq_len, self.hidden_size) 
+
+        output = []
+        # for each input x[i] in batch
+        for i in range(self.batch_size):
+            # hidden for batch i 
+            hx, cx = self.lstm(x[i], (hx, cx))
+            # map output dim from 128 -> 17 
+            out = self.linear(hx)
+            # append to output array
+            output.append(out)
+        # convert output to tensor 
+        output = torch.stack(output, dim = 0 )
+        print(f" \n output LSTMCell: {output.shape}")
+        return output, (hx, cx)
+
+
+        #     for input in x:
+        #     (hn,cn) = self.lstm(x, h)
+        # # concat h0, c0 as hidden
+        # hidden = (h0, c0)
+        # # get output 
+        # output, (hn,cn) = self.lstm(x, hidden)
+        # output = output.view(self.batch_size, self.seq_len, self.input_size)
 
 # output shape: torch.Size([16, 19, 128])
         print(f"output shape: {output.shape}")

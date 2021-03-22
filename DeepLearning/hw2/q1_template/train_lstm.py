@@ -33,10 +33,12 @@ def main():
         hidden_size=hidden_size, 
         num_layers=num_layers, 
         dropout=dropout
-    ).to(device)
+    )
+    
+    model.to(device)
 
     # define Cross Entropy Loss
-    loss_func = nn.MSELoss()
+    loss_func = nn.MSELoss().to(device)
 
     # define optimizer for lstm model
     optim = Adam(model.parameters(), lr=lr)
@@ -49,7 +51,7 @@ def main():
             # init grads to 0
             optim.zero_grad()      
             # forward pass; y_pred shape: (batch_size, 19, 17)
-            y_pred, (hn,cn) = model(in_batch).to(device)
+            y_pred, (hn,cn) = model(in_batch)
             # calculate LSTM MSE loss
             loss = loss_func(y_pred, label)
             # zero gradient 
@@ -67,14 +69,14 @@ def main():
 
     # test trained LSTM model
     l1_err, l2_err = 0, 0
-    l1_loss = nn.L1Loss()
-    l2_loss = nn.MSELoss()
+    l1_loss = nn.L1Loss().to(device)
+    l2_loss = nn.MSELoss().to(device)
     model.eval()
     with torch.no_grad():
         for n_batch, (in_batch, label) in enumerate(test_loader):
             in_batch, label = in_batch.to(device), label.to(device)
             # torch.Size([16, 17]) torch.Size([16, 19, 17])
-            pred = model.test(in_batch).to(device)
+            pred = model.test(in_batch)
 
             l1_err += l1_loss(pred, label).item()
             l2_err += l2_loss(pred, label).item()

@@ -21,7 +21,7 @@ class FlowLSTM(nn.Module):
 
         # define LSTM Cell
         self.lstm = nn.LSTMCell(input_size  = self.input_size,
-                                hidden_size = self.hidden_size)
+                                hidden_size = self.hidden_size).to(device)
 
         self.linear = nn.Linear(self.hidden_size, self.input_size)
     

@@ -20,10 +20,7 @@ class FlowLSTM(nn.Module):
         self.dropout = dropout              # dropout probability 
 
         # define LSTM Cell
-        self.lstm_train= nn.LSTMCell(input_size  = self.input_size,
-                                hidden_size = self.hidden_size)
-
-        self.lstm_test = nn.LSTMCell(input_size  = self.input_size,
+        self.lstm = nn.LSTMCell(input_size  = self.input_size,
                                 hidden_size = self.hidden_size)
 
         self.linear = nn.Linear(self.hidden_size, self.input_size)
@@ -62,10 +59,9 @@ class FlowLSTM(nn.Module):
         '''
         input: x of dim (batch_size, 17) [ only one x ]
         '''
-        self.seq_len = 19
-        # define your feedforward pass
         (self.batch_size, self.input_size) = x.shape
-        
+
+        # initialize hidden
         hx = torch.randn(self.seq_len, self.hidden_size)
         cx = torch.randn(self.seq_len, self.hidden_size) 
 
@@ -73,14 +69,10 @@ class FlowLSTM(nn.Module):
         # for each input x[i] in batch
         for i in range(self.batch_size):
             # instead of 16*19x17, now 16x17 -> transform to 19x17
-        
-            # hidden for batch i 
-            # print('init',x[i].shape)
             inp = x[i].unsqueeze(0)
-            # print('unsqueeze',inp.shape)
             inp = inp.repeat(self.seq_len,1)
-            # print('repeat',inp.shape)
-            hx, cx = self.lstm_test(inp, (hx, cx))
+            # hidden for batch i
+            hx, cx = self.lstm(inp, (hx, cx))
             # map output dim from 128 -> 17 
             out = self.linear(hx)
             # append to output array

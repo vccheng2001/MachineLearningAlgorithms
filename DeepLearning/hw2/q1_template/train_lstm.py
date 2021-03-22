@@ -12,6 +12,7 @@ from lstm import FlowLSTM
 def main():
     # check if cuda available
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    print(f"device: {device}")
 
     # define dataset and dataloader
     train_dataset = FlowDataset(mode='train')
@@ -20,7 +21,7 @@ def main():
     test_loader = DataLoader(dataset=test_dataset, batch_size=16, shuffle=False, num_workers=4)
 
     # hyper-parameters
-    num_epochs = 0
+    num_epochs = 3
     lr = 0.001
     input_size = 17 # do not change input size
     hidden_size = 128
@@ -35,7 +36,7 @@ def main():
     ).to(device)
 
     # define Cross Entropy Loss
-    loss_func = nn.MSELoss() 
+    loss_func = nn.MSELoss()
 
     # define optimizer for lstm model
     optim = Adam(model.parameters(), lr=lr)
@@ -48,7 +49,7 @@ def main():
             # init grads to 0
             optim.zero_grad()      
             # forward pass; y_pred shape: (batch_size, 19, 17)
-            y_pred, (hn,cn) = model(in_batch) 
+            y_pred, (hn,cn) = model(in_batch).to(device)
             # calculate LSTM MSE loss
             loss = loss_func(y_pred, label)
             # zero gradient 
@@ -73,7 +74,7 @@ def main():
         for n_batch, (in_batch, label) in enumerate(test_loader):
             in_batch, label = in_batch.to(device), label.to(device)
             # torch.Size([16, 17]) torch.Size([16, 19, 17])
-            pred = model.test(in_batch)
+            pred = model.test(in_batch).to(device)
 
             l1_err += l1_loss(pred, label).item()
             l2_err += l2_loss(pred, label).item()

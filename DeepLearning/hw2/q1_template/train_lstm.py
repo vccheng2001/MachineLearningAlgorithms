@@ -34,8 +34,8 @@ def main():
         dropout=dropout
     ).to(device)
 
-    # define your LSTM loss function here
-    # loss_func = ?
+    # define Binary Cross Entropy Loss
+    loss_func = nn.BCELoss() 
 
     # define optimizer for lstm model
     optim = Adam(model.parameters(), lr=lr)
@@ -46,15 +46,17 @@ def main():
 
             # train LSTM
 
-            model.zero_grad()               # init grads to 0
-            output = model(in_batch, label) # forward pass 
-            
-
+            # init grads to 0
+            optim.zero_grad()      
+            # forward pass
+            y_pred = model(in_batch) 
             # calculate LSTM loss
-            # loss = loss_func(...)
-
+            loss = loss_func(y_pred, label)
+            # zero gradient 
             optim.zero_grad()
+            # backward pass
             loss.backward()
+            # update parameters 
             optim.step()
 
             # print loss while training

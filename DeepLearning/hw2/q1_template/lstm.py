@@ -20,23 +20,23 @@ class FlowLSTM(nn.Module):
         ''' In training set, your input is of dimension (batch_size, 19, 17) 
             and ground truth us of dimension (batch_size, 19, 17)'''
 
-        self.input_size = input_size        # num features in x
-        self.hidden_size = hidden_size      # num features in h
-        self.num_layers = num_layers        # num layers 
+        self.input_size = input_size        # num features in x (vector length)
+        self.hidden_size = hidden_size      # hidden nodes in LSTM layer 
+        self.num_layers = num_layers        # num LSTM layers 
         self.dropout = dropout              # dropout probability 
+
+        # define LSTM layer 
+        self.lstm = nn.LSTM(self.input_size, self.hidden_size, self.num_layers)
 
 
     # forward pass through LSTM layer
     def forward(self, x):
+        '''            # sequences            # vars in time series 
+                        (batch_size, seq_len,  num_features)
+        input: x of dim (batch_size,     19,        17)
         '''
-        input: x of dim (batch_size, 19, 17)
-        '''
-        # define your feedforward pass
-        # x = torch.randn(batch_size, seq_len, input_size)
 
-        # LSTMCell(num features in x, num features in h, bias)
-        lstm = nn.LSTMCell(input_size, 
-
+        self.lstm()
 
 
     # forward pass through LSTM layer for testing

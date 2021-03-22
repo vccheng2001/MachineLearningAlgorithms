@@ -14,7 +14,6 @@ class FlowLSTM(nn.Module):
         ''' In training set, your input is of dimension (batch_size, 19, 17) 
             and ground truth is of dimension (batch_size, 19, 17)'''
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
         self.input_size = input_size        # num features in x (vector length)
         self.hidden_size = hidden_size      # num LSTM cells per layer 
         self.num_layers = num_layers        # num LSTM/recurrentlayers (vertical)

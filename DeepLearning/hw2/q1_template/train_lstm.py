@@ -33,10 +33,8 @@ def main():
         hidden_size=hidden_size, 
         num_layers=num_layers, 
         dropout=dropout
-    )
+    ).to(device)
     
-    model.to(device)
-
     # define Cross Entropy Loss
     loss_func = nn.MSELoss().to(device)
 

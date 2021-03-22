@@ -14,6 +14,7 @@ class FlowLSTM(nn.Module):
         ''' In training set, your input is of dimension (batch_size, 19, 17) 
             and ground truth is of dimension (batch_size, 19, 17)'''
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
         self.input_size = input_size        # num features in x (vector length)
         self.hidden_size = hidden_size      # num LSTM cells per layer 
         self.num_layers = num_layers        # num LSTM/recurrentlayers (vertical)
@@ -21,11 +22,16 @@ class FlowLSTM(nn.Module):
         self.seq_len = None # init
 
         # define LSTM Cell
-        self.lstm = nn.LSTMCell(input_size  = self.input_size,
-                                hidden_size = self.hidden_size).to(device)
+        self.lstm = nn.LSTM(input_size  = self.input_size,
+                            hidden_size = self.hidden_size,
+                            num_layers = self.num_layers,
+                            dropout = self.dropout)
 
-        self.linear = nn.Linear(self.hidden_size, self.input_size).to(device)
+        self.linear = nn.Linear(self.hidden_size, self.input_size)
     
+
+    def init_hidden_state(self, seq_len):
+        return Variable(torch.zeros(self.num_layers, seq_len, self.hidden_size))
 
     # forward pass through LSTM layer
     def forward(self, x):
@@ -35,25 +41,15 @@ class FlowLSTM(nn.Module):
         input x: (batch_size,   19,     17)
         '''
 
-        (batch_size, self.seq_len, input_size) = x.shape
+        (batch_size, seq_len, input_size) = x.shape
         
         # batch size, hidden size
-        hx = torch.randn(self.seq_len, self.hidden_size)
-        cx = torch.randn(self.seq_len, self.hidden_size) 
+        h0 = self.init_hidden_state(seq_len)
+        c0 = self.init_hidden_state(seq_len)
 
-        output = []
-        # for each input x[i] in batch
-        for i in range(batch_size):
-            # hidden for batch i 
-            hx, cx = self.lstm(x[i], (hx, cx))
-            # map output dim from 128 -> 17 
-            out = self.linear(hx)
-            # append to output array
-            output.append(out)
-        # convert output to tensor 
-        output = torch.stack(output, dim = 0 )
-        # print(f" \n output LSTMCell: {output.shape}")
-        return output, (hx, cx)
+        out, (hn,cn) =  self.lstm(x, (h0, c0))
+        out          =  self.linear(out) 
+        return out, (hn, cn)
 
 
     # forward pass through LSTM layer for testing

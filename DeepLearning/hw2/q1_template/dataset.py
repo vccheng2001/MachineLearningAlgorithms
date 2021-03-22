@@ -36,15 +36,17 @@ class FlowDataset(Dataset):
         train_idx = list(set(range(num_data)) - set(test_idx))
 
         self.mode = mode
-        if mode is 'train':
+        if mode == 'train':
             self.data = target[train_idx,:,:].astype(np.float32)
-        elif mode is 'test':
+        elif mode == 'test':
             self.data = target[test_idx,:,:].astype(np.float32)
     
     def __getitem__(self, idx):
-        if self.mode is 'train':
+        if self.mode == 'train':
+            # print('hi')
+            # print('getting', self.data[idx,:-1,:], self.data[idx,1:,:])
             return self.data[idx,:-1,:], self.data[idx,1:,:]
-        elif self.mode is 'test':
+        elif self.mode == 'test':
             return self.data[idx,0,:], self.data[idx,1:,:]
     
     def __len__(self):

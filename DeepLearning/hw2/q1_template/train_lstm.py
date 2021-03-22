@@ -41,15 +41,17 @@ def main():
     optim = Adam(model.parameters(), lr=lr)
 
     for epoch in range(num_epochs):
+        print(f"epoch #{epoch}")
         for n_batch, (in_batch, label) in enumerate(train_loader):
+            # print(in_batch,label)
             in_batch, label = in_batch.to(device), label.to(device)
-
             # train LSTM
 
             # init grads to 0
             optim.zero_grad()      
             # forward pass
-            y_pred = model(in_batch) 
+            # y_pred shape: (batch_size, 19, 17)
+            y_pred, (hn,cn) = model(in_batch) 
             # calculate LSTM loss
             loss = loss_func(y_pred, label)
             # zero gradient 

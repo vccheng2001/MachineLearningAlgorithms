@@ -21,8 +21,8 @@ class FlowLSTM(nn.Module):
             and ground truth us of dimension (batch_size, 19, 17)'''
 
         self.input_size = input_size        # num features in x (vector length)
-        self.hidden_size = hidden_size      # num LSTM blocks per layer 
-        self.num_layers = num_layers        # num LSTM layers (vertical)
+        self.hidden_size = hidden_size      # num LSTM cells per layer 
+        self.num_layers = num_layers        # num LSTM/recurrentlayers (vertical)
         self.dropout = dropout              # dropout probability 
 
         # define LSTM layer 
@@ -33,20 +33,28 @@ class FlowLSTM(nn.Module):
 
     # forward pass through LSTM layer
     def forward(self, x):
-        '''           # sequences, seq length,  # vars in time series 
-                        (batch_size, seq_len,  num_features/input_size)
-        input: x of dim (batch_size,     19,        17)
+        '''           
+        # Size: [batch_size, seq_len, input_size]
+        input x: (batch_size,   19,     17)
         '''
-        (self.batch_size, self.seq_len, self.inpu_size) = x.shape
+        (self.batch_size, self.seq_len, self.input_size) = x.shape
+
+        print(f"batch_size: {self.batch_size}, seq_len: {self.seq_len}, input_size: {self.input_size}")
+        h0 = torch.randn(self.num_layers, self.seq_len, self.hidden_size) # initialize hidden 
+        c0 = torch.randn(self.num_layers, self.seq_len, self.hidden_size) # initialize cell
         
-        h0 = torch.randn(self.num_layers, self.batch_size, self.hidden_size) # initialize hidden 
-        c0 = torch.randn(self.num_layers, self.batch_size, self.hidden_size) # initialize cell
         # concat h0, c0 as hidden
         hidden = (h0, c0)
+        # get output 
         output, (hn,cn) = self.lstm(x, hidden)
+        output = output.view(self.batch_size, self.seq_len, self.input_size)
+
+# output shape: torch.Size([16, 19, 128])
         print(f"output shape: {output.shape}")
+        exit(0)
         print(f"hidden: {hidden}")
         
+        return output, (hn, cn)
 
 
     # forward pass through LSTM layer for testing

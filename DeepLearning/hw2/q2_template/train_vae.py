@@ -49,9 +49,6 @@ def main():
     vae = VAE(airfoil_dim=airfoil_dim, latent_dim=latent_dim).to(device)
     print("VAE model:\n", vae)
 
-    # define your loss function here
-    # loss = ?
-
     # define optimizer for discriminator and generator separately
     optim = Adam(vae.parameters(), lr=lr)
     
@@ -64,8 +61,7 @@ def main():
 
             # train VAE
             vae.train()
-
-            # recon_batch, mu, logvar = vae() # input y
+            # do VAE
             recon_batch, mu, logvar = vae(y_real)
             # calculate customized VAE loss
             loss = loss_func(recon_batch, y_real, mu, logvar, airfoil_dim)

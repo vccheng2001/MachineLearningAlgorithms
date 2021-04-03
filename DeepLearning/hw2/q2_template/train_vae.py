@@ -15,12 +15,12 @@ from vae import VAE
 from utils import *
 
 # Reconstruction + KL divergence losses summed over all elements and batch
-def loss_func(recon_x, x, mu, logvar):
+def loss_func(recon_x, x, mu, logvar, airfoil_dim):
     # recon, x: 16x 200
     # mu, logvar: 16x16
   
     mse = nn.MSELoss(reduction="sum")
-    MSE = mse(recon_x, x.view(-1, 200))
+    MSE = mse(recon_x, x.view(-1, airfoil_dim))
 
     # see Appendix B from VAE paper:
     # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
@@ -68,7 +68,7 @@ def main():
             # recon_batch, mu, logvar = vae() # input y
             recon_batch, mu, logvar = vae(y_real)
             # calculate customized VAE loss
-            loss = loss_func(recon_batch, y_real, mu, logvar)
+            loss = loss_func(recon_batch, y_real, mu, logvar, airfoil_dim)
 
             optim.zero_grad()
             loss.backward()

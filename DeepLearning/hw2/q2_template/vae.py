@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 
 
+HIDDEN_DIM = 64
+
 class Encoder(nn.Module):
     def __init__(self, input_dim, latent_dim):
         super(Encoder, self).__init__()
@@ -17,10 +19,10 @@ class Encoder(nn.Module):
         Also, all y coordinates are rescaled to [-1,1]. The processed airfoils are 
         shown in Fig. 7a. Therefore, only y coordinates of each airfoil is used to train and test generative models.
         '''
-        self.fc1 = nn.Linear(input_dim, 100)
+        self.fc1 = nn.Linear(input_dim, HIDDEN_DIM)
         self.relu = nn.ReLU()
-        self.fc21 = nn.Linear(100, latent_dim)  # mu layer
-        self.fc22 = nn.Linear(100, latent_dim)  # logvariance layer
+        self.fc21 = nn.Linear(HIDDEN_DIM, latent_dim)  # mu layer
+        self.fc22 = nn.Linear(HIDDEN_DIM, latent_dim)  # logvariance layer
 
     def forward(self, x):
         # define your feedforward pass
@@ -38,9 +40,9 @@ class Decoder(nn.Module):
         # your output should be of dim (batch_size, output_dim)
         # you can use tanh() as the activation for the last layer
         # since y coord of airfoils range from -1 to 1
-        self.fc3 = nn.Linear(latent_dim, 100)
+        self.fc3 = nn.Linear(latent_dim, HIDDEN_DIM)
         # from hidden 400 to 784 outputs
-        self.fc4 = nn.Linear(100, output_dim)
+        self.fc4 = nn.Linear(HIDDEN_DIM, output_dim)
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
 

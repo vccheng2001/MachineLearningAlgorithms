@@ -56,20 +56,20 @@ class VAE(nn.Module):
         self.latent_dim = latent_dim
         self.encoder = Encoder(airfoil_dim, latent_dim)
         self.decoder = Decoder(latent_dim, airfoil_dim)
-    
-    def forward(self, x):
-        (mu, logvar) = self.encoder(x.view(-1, self.airfoil_dim))
-        std = torch.exp(0.5*logvar)
-        eps = torch.randn_like(std)
-        z = mu + eps*std
-        # print(f"z: {z}")
-        recon_batch = self.decoder(z)
-        # 16 x 200
-        # print(f"recon_batch: {recon_batch.shape}")
-        return (recon_batch, mu, logvar)
-        # self.z = self.reparameterize(self.mu, self.logvar)
+        self.z = None
+        self.mu = None
+        self.logvar = None
 
-    # def decode(self, z):
-    #     # given random noise z, generate airfoils
-    #     return self.decoder(z), self.mu, self.logvar 
+
+    def forward(self, x):
+        (self.mu, self.logvar) = self.encoder(x.view(-1, self.airfoil_dim))
+        std = torch.exp(0.5*self.logvar)
+        eps = torch.randn_like(std)
+        self.z = self.mu + eps*std
+        return self.z 
+
+    def decode(self, z):
+        recon_batch = self.decoder(z)
+        # given random noise z, generate airfoils
+        return recon_batch, self.mu, self.logvar 
 

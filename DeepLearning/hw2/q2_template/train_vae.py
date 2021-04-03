@@ -66,8 +66,8 @@ def main():
             vae.train()
 
             # recon_batch, mu, logvar = vae() # input y
-            z = vae(y_real)
-            (recon_batch, mu, logvar) = vae.decode(z) 
+            z, mu, logvar = vae(y_real)
+            recon_batch = vae.decode(z) 
             # calculate customized VAE loss
             loss = loss_func(recon_batch, y_real, mu, logvar)
 

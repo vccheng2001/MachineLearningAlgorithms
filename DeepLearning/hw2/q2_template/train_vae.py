@@ -52,30 +52,37 @@ def main():
     # define optimizer for discriminator and generator separately
     optim = Adam(vae.parameters(), lr=lr)
     
+    training_losses = []
+
     # train the VAE model
     for epoch in range(num_epochs):
         vae.train()
+        print(f"epoch #{epoch}")
         train_loss = 0
         for n_batch, (local_batch, __) in enumerate(airfoil_dataloader):
             y_real = local_batch.to(device)
 
-            # train VAE
-            vae.train()
+            optim.zero_grad()
+            vae.zero_grad()
+
             # do VAE
             recon_batch, mu, logvar = vae(y_real)
-            # calculate customized VAE loss
+            # calculate training VAE loss
             loss = loss_func(recon_batch, y_real, mu, logvar, airfoil_dim)
+            # accum train loss
+            train_loss += loss.item()
 
             optim.zero_grad()
             loss.backward()
             optim.step()
             
-            train_loss += loss.item()
             # print loss while training
             if (n_batch + 1) % 30 == 0:
                 print("Epoch: [{}/{}], Batch: {}, loss: {}".format(
                     epoch, num_epochs, n_batch, loss.item()))
 
+        # append training loss for each epoch 
+        training_losses.append(train_loss/n_batch)
     # test trained VAE model
     num_samples = 100
 
@@ -109,6 +116,14 @@ def main():
     plot_airfoils(airfoil_x, recon_airfoils)
     plot_airfoils(airfoil_x, gen_airfoils)
     
+
+    # plot training loss over epoch
+    plt.plot(range(num_epochs),training_losses, label="training loss")
+    plt.xlabel('Epochs')
+    plt.ylabel('Training loss')
+    plt.legend()
+    plt.savefig('training loss')
+    plt.show()
 
 if __name__ == "__main__":
     main()

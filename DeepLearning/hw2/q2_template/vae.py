@@ -27,7 +27,7 @@ class Encoder(nn.Module):
         h1 = self.fc1(x)
         mu = self.relu(self.fc21(h1))
         logvar = self.relu(self.fc22(h1))
-        print(mu.shape, logvar.shape)
+        # print(mu.shape, logvar.shape)
         # both mu, logvar: 16 x 16
         return (mu, logvar)
 
@@ -62,10 +62,10 @@ class VAE(nn.Module):
         std = torch.exp(0.5*logvar)
         eps = torch.randn_like(std)
         z = mu + eps*std
-        print(f"z: {z}")
+        # print(f"z: {z}")
         recon_batch = self.decoder(z)
         # 16 x 200
-        print(f"recon_batch: {recon_batch.shape}")
+        # print(f"recon_batch: {recon_batch.shape}")
         return (recon_batch, mu, logvar)
         # self.z = self.reparameterize(self.mu, self.logvar)
 

@@ -18,10 +18,9 @@ from utils import *
 def loss_func(recon_x, x, mu, logvar):
     # recon, x: 16x 200
     # mu, logvar: 16x16
-    print(f"RECON{recon_x}\n\n\n\n\nX{x}\n\n\nMU{mu}\n\n\n\nLOGVAR{logvar}\n\n")
-    print(np.where(x>1))
-    print(np.where(recon_x>1))
-    BCE = F.binary_cross_entropy(recon_x, x.view(-1, 200), reduction='sum')
+  
+    mse = nn.MSELoss(reduction="sum")
+    MSE = mse(recon_x, x.view(-1, 200))
 
     # see Appendix B from VAE paper:
     # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
@@ -29,7 +28,7 @@ def loss_func(recon_x, x, mu, logvar):
     # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 
-    return BCE + KLD
+    return MSE + KLD
 
 def main():
     # check if cuda available

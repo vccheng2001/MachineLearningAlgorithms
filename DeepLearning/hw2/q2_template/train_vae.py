@@ -7,11 +7,29 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim import Adam
 import numpy as np
+from torch.nn import functional as F
+
 
 from dataset import AirfoilDataset
 from vae import VAE
 from utils import *
 
+# Reconstruction + KL divergence losses summed over all elements and batch
+def loss_func(recon_x, x, mu, logvar):
+    # recon, x: 16x 200
+    # mu, logvar: 16x16
+    print(f"RECON{recon_x}\n\n\n\n\nX{x}\n\n\nMU{mu}\n\n\n\nLOGVAR{logvar}\n\n")
+    print(np.where(x>1))
+    print(np.where(recon_x>1))
+    BCE = F.binary_cross_entropy(recon_x, x.view(-1, 200), reduction='sum')
+
+    # see Appendix B from VAE paper:
+    # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
+    # https://arxiv.org/abs/1312.6114
+    # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+
+    return BCE + KLD
 
 def main():
     # check if cuda available
@@ -40,18 +58,24 @@ def main():
     
     # train the VAE model
     for epoch in range(num_epochs):
+        vae.train()
+        train_loss = 0
         for n_batch, (local_batch, __) in enumerate(airfoil_dataloader):
             y_real = local_batch.to(device)
 
             # train VAE
+            vae.train()
 
+            # recon_batch, mu, logvar = vae() # input y
+            (recon_batch, mu, logvar) = vae(y_real)
             # calculate customized VAE loss
-            #loss = your_loss_func(...)
+            loss = loss_func(recon_batch, y_real, mu, logvar)
 
             optim.zero_grad()
             loss.backward()
             optim.step()
-
+            
+            train_loss += loss.item()
             # print loss while training
             if (n_batch + 1) % 30 == 0:
                 print("Epoch: [{}/{}], Batch: {}, loss: {}".format(

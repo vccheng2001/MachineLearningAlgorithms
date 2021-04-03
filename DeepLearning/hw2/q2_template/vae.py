@@ -67,10 +67,8 @@ class VAE(nn.Module):
     def forward(self, x):
         (self.mu, self.logvar) = self.encoder(x.view(-1, self.airfoil_dim))
         z = self.reparameterize(self.mu, self.logvar)
-        return z, self.mu, self.logvar 
+        return self.decode(z), self.mu, self.logvar 
 
     def decode(self, z):
-        recon_batch = self.decoder(z)
-        # given random noise z, generate airfoils
-        return recon_batch
+        return self.decoder(z)
 

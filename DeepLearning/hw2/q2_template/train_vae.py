@@ -66,8 +66,7 @@ def main():
             vae.train()
 
             # recon_batch, mu, logvar = vae() # input y
-            z, mu, logvar = vae(y_real)
-            recon_batch = vae.decode(z) 
+            recon_batch, mu, logvar = vae(y_real)
             # calculate customized VAE loss
             loss = loss_func(recon_batch, y_real, mu, logvar)
 
@@ -101,6 +100,15 @@ def main():
         gen_airfoils = gen_airfoils.detach().numpy()
 
     # plot real/reconstructed/synthesized airfoils
+
+    print(airfoil_x.shape, real_airfoils.shape)
+    print(airfoil_x.shape, recon_airfoils.shape)
+    print(airfoil_x.shape, gen_airfoils.shape)
+
+
+    # (200,) (100, 200)
+    # (200,) (100, 16) # should be (100, 200)
+    # (200,) (100, 200)
     plot_airfoils(airfoil_x, real_airfoils)
     plot_airfoils(airfoil_x, recon_airfoils)
     plot_airfoils(airfoil_x, gen_airfoils)

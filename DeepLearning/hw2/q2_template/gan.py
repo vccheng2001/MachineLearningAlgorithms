@@ -12,9 +12,13 @@ class Discriminator(nn.Module):
         # since discriminator is a binary classifier
 
         self.model = nn.Sequential(
-            nn.Linear(input_dim, 64),
+            nn.Linear(input_dim, 128),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(64, 1),
+            nn.Linear(128, 64),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(64,32),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(32, 1),
             nn.Sigmoid(), # returns 0 or 1
         )
     

@@ -13,6 +13,42 @@ from utils import *
 import numpy as np
 from torch.autograd import Variable
 
+# function to train the discriminator network
+def train_dis(optim_dis, data_real, data_fake, loss, dis, device):
+    # create real, fake labels
+    batch_size = data_real.shape[0]
+    real_label = label_real(batch_size).to(device)
+    fake_label = label_fake(batch_size)
+    optim_dis.zero_grad()
+
+    # loss for real (from world)
+    output_real = dis(data_real)
+    loss_real = loss(output_real, real_label)
+    # loss for fake (generated) 
+    output_fake = dis(data_fake)
+    loss_fake = loss(output_fake, fake_label)
+
+    loss_real.backward()
+    loss_fake.backward()
+    optim_dis.step()
+    
+    return (loss_real + loss_fake)/2
+
+# function to train the generator network
+def train_gen(optim_gen, data_fake, loss, dis):
+    batch_size = data_fake.size(0)
+    real_label = label_real(batch_size)
+
+    optim_gen.zero_grad()
+
+    output = dis(data_fake)
+    loss = loss(output, real_label)
+
+    loss.backward()
+    optim_gen.step()
+
+    return loss
+
 def main():
     # check if cuda available
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -50,39 +86,59 @@ def main():
     losses_gen = []
     losses_dis = []
     # train the GAN model
+    gen.train()
+    dis.train()
     for epoch in range(num_epochs):
+        loss_gen = 0
+        loss_dis = 0
+        
+
         for n_batch, (local_batch, __) in enumerate(airfoil_dataloader):
             y_real = local_batch.to(device) # 16x200
 
-             # Adversarial ground truths
-            valid = Variable(Tensor(y_real.shape[0], 1).fill_(1.0), requires_grad=False)
-            fake = Variable(Tensor(y_real.shape[0], 1).fill_(0.0), requires_grad=False)
-            # -----------------
-            #  Train Generator
-            # -----------------
-            optim_gen.zero_grad() 
-            # Sample noise as generator input
-            # np.random.normal(mean,sd,(output_shape))
-            z = Variable(Tensor(np.random.normal(0, 1, (y_real.shape[0], latent_dim))))
-            # Generate a batch of images
-            gen_imgs = gen(z)
-            # Loss measures generator's ability to fool the discriminator
-            loss_gen = loss(dis(gen_imgs), valid)
-            loss_gen.backward()
-            optim_gen.step()
+            batch_size = y_real.shape[0]
 
-            # # ---------------------
-            # #  Train Discriminator
-            # # ---------------------
-            optim_dis.zero_grad()
+            for step in range(3):
+                # real, fake images
+                data_fake = gen(create_noise(batch_size, latent_dim)).detach()
+                data_real = y_real
+                # train discriminator network
+                loss_dis = train_dis(optim_dis, data_real, data_fake, loss,\
+                    dis, device)
+            # run generator given input noise
+            data_fake = gen(create_noise(batch_size, latent_dim))
+            # train generator 
+            loss_gen = train_gen(optim_gen, data_fake, loss, dis)
+          
+            #  # Adversarial ground truths
+            # valid = Variable(Tensor(y_real.shape[0], 1).fill_(1.0), requires_grad=False)
+            # fake = Variable(Tensor(y_real.shape[0], 1).fill_(0.0), requires_grad=False)
+            # # -----------------
+            # #  Train Generator
+            # # -----------------
+            # optim_gen.zero_grad() 
+            # # Sample noise as generator input
+            # # np.random.normal(mean,sd,(output_shape))
+            # z = Variable(Tensor(np.random.normal(0, 1, (y_real.shape[0], latent_dim))))
+            # # Generate a batch of images
+            # gen_imgs = gen(z)
+            # # Loss measures generator's ability to fool the discriminator
+            # loss_gen = loss(dis(gen_imgs), valid)
+            # loss_gen.backward()
+            # optim_gen.step()
 
-            # # Measure discriminator's ability to classify real from generated samples
-            real_loss = loss(dis(y_real), valid) # real world
-            fake_loss = loss(dis(gen_imgs.detach()), fake) # output from generator 
-            loss_dis = (real_loss + fake_loss) / 2
+            # # # ---------------------
+            # # #  Train Discriminator
+            # # # ---------------------
+            # optim_dis.zero_grad()
 
-            loss_dis.backward()
-            optim_dis.step()
+            # # # Measure discriminator's ability to classify real from generated samples
+            # real_loss = loss(dis(y_real), valid) # real world
+            # fake_loss = loss(dis(gen_imgs.detach()), fake) # output from generator 
+            # loss_dis = (real_loss + fake_loss) / 2
+
+            # loss_dis.backward()
+            # optim_dis.step()
 
             # print loss while training
             if (n_batch + 1) % 30 == 0:

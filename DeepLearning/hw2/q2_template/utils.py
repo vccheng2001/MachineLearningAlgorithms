@@ -7,6 +7,7 @@ import torch
 import matplotlib.pyplot as plt
 
 
+
 def plot_airfoils(airfoil_x, airfoil_y):
     '''
     plot airfoils: no need to modify 
@@ -20,3 +21,15 @@ def plot_airfoils(airfoil_x, airfoil_y):
             col.axis('equal')
             idx += 1
     plt.show()
+
+
+def label_real(size):
+    data = torch.ones(size, 1)
+    return data
+# to create fake labels (0s)
+def label_fake(size):
+    data = torch.zeros(size, 1)
+    return data
+# function to create the noise vector
+def create_noise(batch_size, latent_dim):
+    return torch.randn(batch_size, latent_dim)

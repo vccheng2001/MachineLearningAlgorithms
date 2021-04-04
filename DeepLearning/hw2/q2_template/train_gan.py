@@ -25,8 +25,8 @@ def main():
 
     # hyperparameters
     latent_dim = 16 # please do not change latent dimension
-    lr_dis = 0.0005 # discriminator learning rate
-    lr_gen = 0.0005 # generator learning rate
+    lr_dis = 0.001 # discriminator learning rate
+    lr_gen = 0.001 # generator learning rate
     num_epochs = 60
 
     # build the model
@@ -42,10 +42,13 @@ def main():
     # define optimizer for discriminator and generator separately
     optim_dis = Adam(dis.parameters(), lr=lr_dis)
     optim_gen = Adam(gen.parameters(), lr=lr_gen)
+    # optim_dis = torch.optim.SGD(dis.parameters(), lr=lr_dis, momentum=0.9)
+    # optim_gen = torch.optim.SGD(dis.parameters(), lr=lr_gen, momentum=0.9)
 
     Tensor = torch.cuda.FloatTensor if device == "cuda:0" else torch.FloatTensor
 
-    
+    losses_gen = []
+    losses_dis = []
     # train the GAN model
     for epoch in range(num_epochs):
         for n_batch, (local_batch, __) in enumerate(airfoil_dataloader):
@@ -54,8 +57,6 @@ def main():
              # Adversarial ground truths
             valid = Variable(Tensor(y_real.shape[0], 1).fill_(1.0), requires_grad=False)
             fake = Variable(Tensor(y_real.shape[0], 1).fill_(0.0), requires_grad=False)
-        
-            
             # -----------------
             #  Train Generator
             # -----------------
@@ -63,13 +64,10 @@ def main():
             # Sample noise as generator input
             # np.random.normal(mean,sd,(output_shape))
             z = Variable(Tensor(np.random.normal(0, 1, (y_real.shape[0], latent_dim))))
-
             # Generate a batch of images
             gen_imgs = gen(z)
-
             # Loss measures generator's ability to fool the discriminator
             loss_gen = loss(dis(gen_imgs), valid)
-
             loss_gen.backward()
             optim_gen.step()
 
@@ -90,7 +88,9 @@ def main():
             if (n_batch + 1) % 30 == 0:
                 print("Epoch: [{}/{}], Batch: {}, Discriminator loss: {}, Generator loss: {}".format(
                     epoch, num_epochs, n_batch, loss_dis.item(), loss_gen.item()))
-
+        
+        losses_gen.append(loss_gen)
+        losses_dis.append(loss_dis)
     # test trained GAN model
     num_samples = 100
     # create random noise 
@@ -105,6 +105,14 @@ def main():
     # plot generated airfoils
     plot_airfoils(airfoil_x, gen_airfoils)
 
+     # plot training loss over epoch
+    plt.plot(range(num_epochs),losses_dis, label="discriminator training loss")
+    plt.plot(range(num_epochs),losses_gen, label="generator training loss")
+    plt.xlabel('Epochs')
+    plt.ylabel('Training loss')
+    plt.legend()
+    plt.savefig('training loss')
+    plt.show()
 
 if __name__ == "__main__":
     main()

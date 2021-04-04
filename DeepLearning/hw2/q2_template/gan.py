@@ -14,8 +14,10 @@ class Discriminator(nn.Module):
         self.model = nn.Sequential(
             nn.Linear(input_dim, 128),
             nn.LeakyReLU(0.2, inplace=True),
+            nn.Dropout(0.1),
             nn.Linear(128, 32),
             nn.LeakyReLU(0.2, inplace=True),
+            nn.Dropout(0.1),
             nn.Linear(32, 1),
             nn.Sigmoid(), # returns 0 or 1
         )

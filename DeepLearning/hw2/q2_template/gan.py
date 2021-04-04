@@ -14,9 +14,7 @@ class Discriminator(nn.Module):
         self.model = nn.Sequential(
             nn.Linear(input_dim, 128),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(128, 64),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(64,32),
+            nn.Linear(128, 32),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(32, 1),
             nn.Sigmoid(), # returns 0 or 1
@@ -53,8 +51,9 @@ class Generator(nn.Module):
 
         self.model = nn.Sequential(
             *block(latent_dim, 32, normalize=False),
-            *block(32, 64),
-            *block(64, 128),
+            *block(32, 48),
+            *block(48,64),
+            *block(64,128),
             nn.Linear(128, self.airfoil_dim),
             nn.Tanh()
         )

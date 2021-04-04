@@ -141,6 +141,10 @@ def main():
     plt.savefig('gan_train_loss')
     plt.show()
 
+    # save model
+    torch.save(dis.state_dict(), "p2_GAN_dis_model.pt")
+    torch.save(gen.state_dict(), "p2_GAN_gen_model.pt")
+
 if __name__ == "__main__":
     main()
 

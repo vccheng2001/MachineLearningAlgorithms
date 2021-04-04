@@ -124,6 +124,8 @@ def main():
     plt.legend()
     plt.savefig('training loss')
     plt.show()
-
+    
+    # save model
+    torch.save(vae.state_dict(), "p2_vae_model.pt")
 if __name__ == "__main__":
     main()

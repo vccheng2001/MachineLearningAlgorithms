@@ -43,31 +43,34 @@ def main():
     optim_dis = Adam(dis.parameters(), lr=lr_dis)
     optim_gen = Adam(gen.parameters(), lr=lr_gen)
 
-    Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
+    Tensor = torch.cuda.FloatTensor if device == "cuda:0" else torch.FloatTensor
 
     
     # train the GAN model
     for epoch in range(num_epochs):
         for n_batch, (local_batch, __) in enumerate(airfoil_dataloader):
-            y_real = local_batch.to(device)
-            
-            # 16x200
-            print(y_real.shape)
+            y_real = local_batch.to(device) # 16x200
+
+             # Adversarial ground truths
+            valid = Variable(Tensor(y_real.shape[0], 1).fill_(1.0), requires_grad=False)
+            fake = Variable(Tensor(y_real.shape[0], 1).fill_(0.0), requires_grad=False)
+        
             
             # -----------------
             #  Train Generator
             # -----------------
             optim_gen.zero_grad() 
             # Sample noise as generator input
+            # np.random.normal(mean,sd,(output_shape))
             z = Variable(Tensor(np.random.normal(0, 1, (y_real.shape[0], latent_dim))))
 
             # Generate a batch of images
             gen_imgs = gen(z)
 
             # Loss measures generator's ability to fool the discriminator
-            g_loss = loss(dis(gen_imgs), valid)
+            loss_gen = loss(dis(gen_imgs), valid)
 
-            g_loss.backward()
+            loss_gen.backward()
             optim_gen.step()
 
             # # ---------------------
@@ -76,11 +79,11 @@ def main():
             optim_dis.zero_grad()
 
             # # Measure discriminator's ability to classify real from generated samples
-            real_loss = loss(dis(real_imgs), valid)
-            fake_loss = loss(dis(gen_imgs.detach()), fake)
-            d_loss = (real_loss + fake_loss) / 2
+            real_loss = loss(dis(y_real), valid) # real world
+            fake_loss = loss(dis(gen_imgs.detach()), fake) # output from generator 
+            loss_dis = (real_loss + fake_loss) / 2
 
-            d_loss.backward()
+            loss_dis.backward()
             optim_dis.step()
 
             # print loss while training

@@ -1,5 +1,5 @@
 '''
-train and test GAN model on airfoils
+Train and test GAN model on UIUC airfoils dataset
 '''
 
 import torch
@@ -14,11 +14,13 @@ import numpy as np
 from torch.autograd import Variable
 
 # function to train the discriminator network
+# data_real: from world
+# data_fake: created by generator 
 def train_dis(optim_dis, data_real, data_fake, loss, dis, device):
     # create real, fake labels
     batch_size = data_real.shape[0]
     real_label = label_real(batch_size).to(device)
-    fake_label = label_fake(batch_size)
+    fake_label = label_fake(batch_size).to(device)
 
     optim_dis.zero_grad()
 
@@ -37,9 +39,9 @@ def train_dis(optim_dis, data_real, data_fake, loss, dis, device):
 
 # function to train the generator network
 # data_fake: created by generator 
-def train_gen(optim_gen, data_fake, loss, dis):
+def train_gen(optim_gen, data_fake, loss, dis, device):
     batch_size = data_fake.size(0)
-    real_label = label_real(batch_size) 
+    real_label = label_real(batch_size).to(device)
 
     optim_gen.zero_grad()
     # feed fake data to discriminator  
@@ -61,10 +63,10 @@ def main():
     airfoil_dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
 
     # hyperparameters
-    latent_dim = 16 # please do not change latent dimension
+    latent_dim = 16 
     lr_dis = 0.001 # discriminator learning rate
     lr_gen = 0.001 # generator learning rate
-    num_epochs = 75
+    num_epochs = 60
 
     # build the model
     dis = Discriminator(input_dim=airfoil_dim).to(device)
@@ -106,15 +108,16 @@ def main():
             # run generator given input noise
             data_fake = gen(create_noise(batch_size, latent_dim))
             # train generator, accum loss based on how discriminator 'reacts'
-            loss_gen = train_gen(optim_gen, data_fake, loss, dis)
+            loss_gen = train_gen(optim_gen, data_fake, loss, dis, device)
           
             # print loss while training
             if (n_batch + 1) % 30 == 0:
                 print("Epoch: [{}/{}], Batch: {}, Discriminator loss: {}, Generator loss: {}".format(
                     epoch, num_epochs, n_batch, loss_dis.item(), loss_gen.item()))
-        
+        # losses 
         losses_gen.append(loss_gen)
         losses_dis.append(loss_dis)
+
     # test trained GAN model
     num_samples = 100
     # create random noise 
@@ -135,7 +138,7 @@ def main():
     plt.xlabel('Epochs')
     plt.ylabel('Training loss')
     plt.legend()
-    plt.savefig('training loss')
+    plt.savefig('gan_train_loss')
     plt.show()
 
 if __name__ == "__main__":

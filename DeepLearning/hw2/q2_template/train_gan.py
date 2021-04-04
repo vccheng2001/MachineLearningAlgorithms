@@ -31,7 +31,7 @@ def train_dis(optim_dis, data_real, data_fake, loss, dis, device):
     loss_real.backward()
     loss_fake.backward()
     optim_dis.step()
-    
+
     return (loss_real + loss_fake)/2
 
 # function to train the generator network
@@ -98,7 +98,7 @@ def main():
 
             batch_size = y_real.shape[0]
 
-            for step in range(3):
+            for step in range(5):
                 # real, fake images
                 data_fake = gen(create_noise(batch_size, latent_dim)).detach()
                 data_real = y_real
@@ -106,9 +106,11 @@ def main():
                 loss_dis = train_dis(optim_dis, data_real, data_fake, loss,\
                     dis, device)
             # run generator given input noise
-            data_fake = gen(create_noise(batch_size, latent_dim))
-            # train generator 
-            loss_gen = train_gen(optim_gen, data_fake, loss, dis)
+
+            for step in range(1):
+                data_fake = gen(create_noise(batch_size, latent_dim))
+                # train generator 
+                loss_gen = train_gen(optim_gen, data_fake, loss, dis)
           
             #  # Adversarial ground truths
             # valid = Variable(Tensor(y_real.shape[0], 1).fill_(1.0), requires_grad=False)
